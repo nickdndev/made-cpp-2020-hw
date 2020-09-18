@@ -39,7 +39,10 @@ bool isDenormalizedNumber(uint64_t number) {
    */
     //2. approach via only mask
     /*((uint16_t) (number >> (uint64_t) 52) | (uint16_t) 0x800) == (uint16_t) 0x800;*/
-    return ((uint16_t)(number >> (uint64_t) 52) | (uint16_t) 0x800) == (uint16_t) 0x800;
+
+    bool check_exponent = ((uint16_t)(number >> (uint64_t) 52) | (uint16_t) 0x800) == (uint16_t) 0x800;
+    bool check_first_bit = getBit(number, 0) == 1;
+    return check_exponent && check_first_bit;
 }
 
 bool isNan(uint64_t number) {
@@ -56,10 +59,6 @@ bool isNan(uint64_t number) {
     // ((number >> (uint64_t) 52) | (uint16_t) 0x800) == (uint16_t) 0xFFF
 
     return ((uint16_t)(number >> (uint64_t) 52) | (uint16_t) 0x800) == (uint16_t) 0xFFF;
-}
-
-bool isQNan(uint64_t number) {
-    return getBit(number, 51) == 1;
 }
 
 /**
@@ -99,11 +98,11 @@ bool checkForMinusDenormal(uint64_t number) {
 }
 
 bool checkForSignalingNan(uint64_t number) {
-    return isNan(number) && !isQNan(number);
+    return isNan(number) && getBit(number, 0) == 1;
 }
 
 bool checkForQuietNan(uint64_t number) {
-    return isNan(number) && isQNan(number);
+    return isNan(number) && getBit(number, 51) == 1;
 }
 
 
