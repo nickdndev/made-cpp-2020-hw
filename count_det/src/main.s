@@ -2,6 +2,7 @@
 .global count_det
 
 count_det:
+    push {r4-r9}
 	ldr r1, [r0]
 	ldr r2, [r0, #4]
 	ldr r3, [r0, #8]
@@ -29,4 +30,5 @@ count_det:
     mul r10, r2, r4
     mul r10, r10, r9
     sub r0,  r0, r10
+    pop {r4-r9}
 	bx lr
