@@ -136,8 +136,9 @@ namespace task {
         for (double i : vec) {
             stream << i << ' ';
         }
+
         stream << '\n';
+
+        return stream;
     }
-
-
 }
