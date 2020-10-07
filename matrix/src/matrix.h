@@ -20,14 +20,19 @@ class Matrix {
 
     double **data;
 
+    friend std::ostream &operator<<(std::ostream &, const Matrix &);
 
-    void initData(){
+    friend std::istream &operator>>(std::istream &, Matrix &);
+
+    friend Matrix operator*(const double &a, const Matrix &b);
+
+    void initData() {
 
         data = new double *[rows];
 
-        for (int i = 0; i < rows; i++) {
+        for (size_t i = 0; i < rows; i++) {
             data[i] = new double[columns];
-            for (int j = 0; j < columns; j++) {
+            for (size_t j = 0; j < columns; j++) {
                 data[i][j] = 1.;
             }
         }
@@ -45,8 +50,8 @@ public:
     void set(size_t row, size_t col, const double& value);
     void resize(size_t new_rows, size_t new_cols);
 
-    /* ??? */ operator[](size_t row);
-    /* ??? */ operator[](size_t row) const;
+    double *operator[](size_t row);
+    double *operator[](size_t row) const;
 
     Matrix& operator+=(const Matrix& a);
     Matrix& operator-=(const Matrix& a);
