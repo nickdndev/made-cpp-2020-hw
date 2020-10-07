@@ -15,6 +15,24 @@ class SizeMismatchException : public std::exception {};
 
 class Matrix {
 
+    long columns;
+    long rows;
+
+    double **data;
+
+
+    void initData(){
+
+        data = new double *[rows];
+
+        for (int i = 0; i < rows; i++) {
+            data[i] = new double[columns];
+            for (int j = 0; j < columns; j++) {
+                data[i][j] = 1.;
+            }
+        }
+    }
+
 public:
 
     Matrix();
