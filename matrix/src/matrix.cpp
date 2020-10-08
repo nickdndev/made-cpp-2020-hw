@@ -146,7 +146,7 @@ Matrix Matrix::operator*(const double &a) const {
     return m *= a;
 }
 
-Matrix task::operator*(const double &a, const Matrix &b){
+Matrix task::operator*(const double &a, const Matrix &b) {
     Matrix m = b;
     return m *= a;
 };
@@ -156,13 +156,11 @@ Matrix &Matrix::operator*=(const Matrix &a) {
         throw SizeMismatchException();
 
 
-    double **new_data = new double* [rows];
+    double **new_data = new double *[rows];
 
-    for (int i = 0; i < rows; i++)
-    {
+    for (int i = 0; i < rows; i++) {
         new_data[i] = new double[a.columns];
-        for (int j = 0; j < a.columns; j++)
-        {
+        for (int j = 0; j < a.columns; j++) {
             new_data[i][j] = 0;
             for (int k = 0; k < columns; k++)
                 new_data[i][j] += data[i][k] * a[k][j];
@@ -310,5 +308,65 @@ std::istream &task::operator>>(std::istream &input, Matrix &matrix) {
     matrix.columns = columns;
 
     return input;
+}
+
+Matrix Matrix::operator-() const {
+    for (size_t i = 0; i < rows; i++) {
+        for (size_t j = 0; j < columns; j++) {
+            data[i][j] *= -1;
+        }
+    }
+
+    return *this;
+}
+
+Matrix Matrix::operator+() const {
+    for (size_t i = 0; i < rows; i++) {
+        for (size_t j = 0; j < columns; j++) {
+            data[i][j] *= -1;
+        }
+    }
+
+    return *this;
+}
+
+void Matrix::transpose() {
+
+
+    double **new_data = new double *[columns];
+
+
+    for (int i = 0; i < columns; i++) {
+        new_data[i] = new double[columns];
+        for (int j = 0; j < rows; j++) {
+            new_data[i][j] = data[j][i];
+        }
+    }
+
+    for (size_t i = 0; i < rows; i++) {
+        delete[] data[i];
+    }
+
+    delete[] data;
+
+    long tmp = rows;
+    rows = columns;
+    columns = tmp;
+    data = new_data;
+}
+
+Matrix Matrix::transposed() const {
+
+
+    Matrix transposed_matrix(columns, rows);
+
+    for (int i = 0; i < columns; i++) {
+        transposed_matrix.data[i] = new double[columns];
+        for (int j = 0; j < rows; j++) {
+            transposed_matrix.data[i][j] = data[j][i];
+        }
+    }
+
+    return transposed_matrix;
 }
 
