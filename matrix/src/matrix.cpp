@@ -225,16 +225,14 @@ Matrix Matrix::operator-(const Matrix &a) const {
     return m -= a;
 }
 
-double Matrix::det() const {
-    if (columns != rows)
-        throw SizeMismatchException();
-    return 0;
-}
-
 double Matrix::trace() const {
     if (columns != rows)
         throw SizeMismatchException();
-    return 0;
+
+    double sum = 0;
+    for (int i = 0; i < rows; i++)
+        sum += data[i][i];
+    return sum;
 }
 
 bool Matrix::operator==(const Matrix &a) const {
@@ -280,7 +278,7 @@ std::istream &task::operator>>(std::istream &input, Matrix &matrix) {
 
     input >> rows >> columns;
 
-    //std::cout << "rows : " << rows << " columns : " << columns << std::endl;
+    std::cout << "rows : " << rows << " columns : " << columns << std::endl;
 
     for (size_t i = 0; i < matrix.rows; i++) {
         delete[] matrix.data[i];
@@ -297,7 +295,7 @@ std::istream &task::operator>>(std::istream &input, Matrix &matrix) {
         matrix.data[i] = new double[columns];
         for (size_t j = 0; j < columns; j++) {
             input >> value;
-            // std::cout << "  " << value;
+            std::cout << "  " << value;
             matrix.data[i][j] = value;
         }
         std::cout << std::endl;
@@ -337,7 +335,7 @@ void Matrix::transpose() {
 
 
     for (int i = 0; i < columns; i++) {
-        new_data[i] = new double[columns];
+        new_data[i] = new double[rows];
         for (int j = 0; j < rows; j++) {
             new_data[i][j] = data[j][i];
         }
@@ -357,11 +355,10 @@ void Matrix::transpose() {
 
 Matrix Matrix::transposed() const {
 
-
     Matrix transposed_matrix(columns, rows);
 
     for (int i = 0; i < columns; i++) {
-        transposed_matrix.data[i] = new double[columns];
+        transposed_matrix.data[i] = new double[rows];
         for (int j = 0; j < rows; j++) {
             transposed_matrix.data[i][j] = data[j][i];
         }
@@ -370,3 +367,58 @@ Matrix Matrix::transposed() const {
     return transposed_matrix;
 }
 
+void cofactor(double **mat, double **temp, int p, int q, int n) {
+    int i = 0;
+    int j = 0;
+    for (int row = 0; row < n; row++) {
+        for (int col = 0; col < n; col++) {
+            if (row != p && col != q) {
+                temp[i][j++] = mat[row][col];
+                if (j == n - 1) {
+                    j = 0;
+                    i++;
+                }
+            }
+        }
+    }
+}
+
+double calculateDeterminantfMatrix(double **mat, int n) {
+    double determinant = 0.;
+
+    if (n == 1)
+        return mat[0][0];
+
+    auto **temp = new double *[n];
+
+    for (int i = 0; i < n; i++) {
+        temp[i] = new double[n];
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < n; k++)
+                temp[i][j] = mat[i][j];
+        }
+    }
+
+    int sign = 1;
+
+    for (int f = 0; f < n; f++) {
+        cofactor(mat, temp, 0, f, n);
+        determinant += sign * mat[0][f] * calculateDeterminantfMatrix(temp, n - 1);
+        sign = -sign;
+    }
+
+
+    for (size_t i = 0; i < n; i++) {
+        delete[] temp[i];
+    }
+
+    delete[] temp;
+
+    return determinant;
+}
+
+double Matrix::det() const {
+    if (columns != rows)
+        throw SizeMismatchException();
+    return calculateDeterminantfMatrix(data, rows);
+}
