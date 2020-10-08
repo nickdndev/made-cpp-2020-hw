@@ -33,7 +33,10 @@ class Matrix {
         for (size_t i = 0; i < rows; i++) {
             data[i] = new double[columns];
             for (size_t j = 0; j < columns; j++) {
-                data[i][j] = 1.;
+                if (i == j)
+                    data[i][j] = 1.;
+                else
+                    data[i][j] = 0;
             }
         }
     }
@@ -77,8 +80,6 @@ public:
     bool operator==(const Matrix& a) const;
     bool operator!=(const Matrix& a) const;
 
-    // Your code goes here...
-
 };
 
 
@@ -89,4 +90,4 @@ std::istream& operator>>(std::istream& input, Matrix& matrix);
 
 
 
-}  // namespace task
+}

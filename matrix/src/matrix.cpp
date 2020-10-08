@@ -41,7 +41,7 @@ Matrix &Matrix::operator=(const Matrix &a) {
     if (this == &a)
         return *this;
 
-    double **new_data = new double *[a.rows];
+    auto **new_data = new double *[a.rows];
 
     for (size_t i = 0; i < a.rows; i++) {
         new_data[i] = new double[a.columns];
@@ -156,7 +156,7 @@ Matrix &Matrix::operator*=(const Matrix &a) {
         throw SizeMismatchException();
 
 
-    double **new_data = new double *[rows];
+    auto **new_data = new double *[rows];
 
     for (int i = 0; i < rows; i++) {
         new_data[i] = new double[a.columns];
@@ -254,17 +254,12 @@ bool Matrix::operator!=(const Matrix &a) const {
 }
 
 std::ostream &task::operator<<(std::ostream &output, const Matrix &matrix) {
-
-    // output << matrix.rows << ' ' << matrix.columns << /*'\n'*/std::endl;;
-
-    //std::cout << " out matrix  " << std::endl;
     for (size_t i = 0; i < matrix.rows; i++) {
         for (size_t j = 0; j < matrix.columns; j++) {
-            // std::cout << "  " << matrix.data[i][j];
             output << matrix.data[i][j] << ' ';
         }
+
         output << std::endl;
-        // std::cout << std::endl;
     }
 
     output << std::endl;
@@ -278,12 +273,9 @@ std::istream &task::operator>>(std::istream &input, Matrix &matrix) {
 
     input >> rows >> columns;
 
-    std::cout << "rows : " << rows << " columns : " << columns << std::endl;
-
     for (size_t i = 0; i < matrix.rows; i++) {
         delete[] matrix.data[i];
     }
-
 
     delete[] matrix.data;
 
@@ -295,12 +287,9 @@ std::istream &task::operator>>(std::istream &input, Matrix &matrix) {
         matrix.data[i] = new double[columns];
         for (size_t j = 0; j < columns; j++) {
             input >> value;
-            std::cout << "  " << value;
             matrix.data[i][j] = value;
         }
-        std::cout << std::endl;
     }
-
 
     matrix.rows = rows;
     matrix.columns = columns;
@@ -330,9 +319,7 @@ Matrix Matrix::operator+() const {
 
 void Matrix::transpose() {
 
-
-    double **new_data = new double *[columns];
-
+    auto **new_data = new double *[columns];
 
     for (int i = 0; i < columns; i++) {
         new_data[i] = new double[rows];
@@ -383,7 +370,7 @@ void cofactor(double **mat, double **temp, int p, int q, int n) {
     }
 }
 
-double calculateDeterminantfMatrix(double **mat, int n) {
+double calculateDeterminantfMatrix(double **mat, long n) {
     double determinant = 0.;
 
     if (n == 1)
@@ -401,7 +388,7 @@ double calculateDeterminantfMatrix(double **mat, int n) {
 
     int sign = 1;
 
-    for (int f = 0; f < n; f++) {
+    for (long f = 0; f < n; f++) {
         cofactor(mat, temp, 0, f, n);
         determinant += sign * mat[0][f] * calculateDeterminantfMatrix(temp, n - 1);
         sign = -sign;
