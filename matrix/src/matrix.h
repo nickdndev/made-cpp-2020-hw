@@ -15,8 +15,8 @@ class SizeMismatchException : public std::exception {};
 
 class Matrix {
 
-    long columns;
-    long rows;
+    size_t columns;
+    size_t rows;
 
     double **data;
 

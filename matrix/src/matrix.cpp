@@ -158,11 +158,11 @@ Matrix &Matrix::operator*=(const Matrix &a) {
 
     auto **new_data = new double *[rows];
 
-    for (int i = 0; i < rows; i++) {
+    for (size_t i = 0; i < rows; i++) {
         new_data[i] = new double[a.columns];
-        for (int j = 0; j < a.columns; j++) {
+        for (size_t j = 0; j < a.columns; j++) {
             new_data[i][j] = 0;
-            for (int k = 0; k < columns; k++)
+            for (size_t k = 0; k < columns; k++)
                 new_data[i][j] += data[i][k] * a[k][j];
         }
     }
@@ -334,7 +334,7 @@ void Matrix::transpose() {
 
     delete[] data;
 
-    long tmp = rows;
+    size_t tmp = rows;
     rows = columns;
     columns = tmp;
     data = new_data;
@@ -344,9 +344,9 @@ Matrix Matrix::transposed() const {
 
     Matrix transposed_matrix(columns, rows);
 
-    for (int i = 0; i < columns; i++) {
+    for (size_t i = 0; i < columns; i++) {
         transposed_matrix.data[i] = new double[rows];
-        for (int j = 0; j < rows; j++) {
+        for (size_t j = 0; j < rows; j++) {
             transposed_matrix.data[i][j] = data[j][i];
         }
     }
@@ -354,11 +354,11 @@ Matrix Matrix::transposed() const {
     return transposed_matrix;
 }
 
-void cofactor(double **mat, double **temp, int p, int q, int n) {
-    int i = 0;
-    int j = 0;
-    for (int row = 0; row < n; row++) {
-        for (int col = 0; col < n; col++) {
+void cofactor(double **mat, double **temp, size_t p, size_t q, size_t n) {
+    size_t i = 0;
+    size_t j = 0;
+    for (size_t row = 0; row < n; row++) {
+        for (size_t col = 0; col < n; col++) {
             if (row != p && col != q) {
                 temp[i][j++] = mat[row][col];
                 if (j == n - 1) {
@@ -370,7 +370,7 @@ void cofactor(double **mat, double **temp, int p, int q, int n) {
     }
 }
 
-double calculateDeterminantfMatrix(double **mat, long n) {
+double calculateDeterminantfMatrix(double **mat, size_t n) {
     double determinant = 0.;
 
     if (n == 1)
@@ -378,17 +378,17 @@ double calculateDeterminantfMatrix(double **mat, long n) {
 
     auto **temp = new double *[n];
 
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         temp[i] = new double[n];
-        for (int j = 0; j < n; j++) {
-            for (int k = 0; k < n; k++)
+        for (size_t j = 0; j < n; j++) {
+            for (size_t k = 0; k < n; k++)
                 temp[i][j] = mat[i][j];
         }
     }
 
     int sign = 1;
 
-    for (long f = 0; f < n; f++) {
+    for (size_t f = 0; f < n; f++) {
         cofactor(mat, temp, 0, f, n);
         determinant += sign * mat[0][f] * calculateDeterminantfMatrix(temp, n - 1);
         sign = -sign;
