@@ -234,15 +234,14 @@ Circle Triangle::inscribedCircle() {
     Point pointA = points[0];
     Point pointB = points[1];
     Point pointC = points[2];
-    double a = sqrt(pow((pointB.y - pointA.y), 2) + pow((pointB.x - pointA.x), 2)) / 2;
-    double b = sqrt(pow((pointC.y - pointB.y), 2) + pow((pointC.x - pointB.x), 2)) / 2;
-    double c = sqrt(pow((pointA.y - pointC.y), 2) + pow((pointA.x - pointC.x), 2)) / 2;
 
-    double p = (a + b + c) / 2;
+    double c = sqrt(pow((pointB.y - pointA.y), 2) + pow((pointB.x - pointA.x), 2));
+    double a = sqrt(pow((pointC.y - pointB.y), 2) + pow((pointC.x - pointB.x), 2));
+    double b = sqrt(pow((pointA.y - pointC.y), 2) + pow((pointA.x - pointC.x), 2));
 
-    double area = sqrt(p * (p - a) * (p - b) * (p - c));
+    double s = (a + b + c) / 2;
 
-    double radius = area / p;
+    double radius = sqrt((s - a) * (s - b) * (s - c) / s);
 
     double x = (a * pointA.x + b * pointB.x + c * pointC.x) / (a + b + c);
     double y = (a * pointA.y + b * pointB.y + c * pointC.y) / (a + b + c);
@@ -254,13 +253,6 @@ Circle Triangle::circumscribedCircle() {
     Point pointA = points[0];
     Point pointB = points[1];
     Point pointC = points[2];
-    double a = sqrt(pow((pointB.y - pointA.y), 2) + pow((pointB.x - pointA.x), 2)) / 2;
-    double b = sqrt(pow((pointC.y - pointB.y), 2) + pow((pointC.x - pointB.x), 2)) / 2;
-    double c = sqrt(pow((pointA.y - pointC.y), 2) + pow((pointA.x - pointC.x), 2)) / 2;
-
-
-    /*  double radius = (a * b * c) / (sqrt((a + b + c) * (b + c - a) * (c + a - b) * (a + b - c)));
-  */
 
     double res1 = (pointA.y - pointB.y)
                   * ((pointC.x - pointB.x) * (pointC.x + pointB.x) + (pointC.y - pointB.y) * (pointC.y + pointB.y))
@@ -288,17 +280,6 @@ Circle Triangle::circumscribedCircle() {
 
     double radius = sqrt(pow((pointA.x - x), 2) + pow((pointA.y - y), 2));
 
-/*
-    double d = 2 *
-               (pointA.x * (pointB.y - pointC.y) + pointB.x * (pointC.y - pointA.y) + pointC.x * (pointA.y - pointB.y));
-
-    double x = ((pointA.x * pointA.x + pointA.y * pointA.y) * (pointB.x - pointC.y) +
-                (pointB.x * pointB.x + pointB.y * pointB.y) * (pointC.y - pointA.y) +
-                (pointC.x * pointC.x + pointC.y * pointC.y) * (pointA.y - pointB.y)) / d;
-
-    double y = ((pointA.x * pointA.x + pointA.y * pointA.y) * (pointC.x - pointB.x) +
-                (pointB.x * pointB.x + pointB.y * pointB.y) * (pointA.x - pointC.x) +
-                (pointC.x * pointC.x + pointC.y * pointC.y) * (pointB.x - pointA.x)) / d;*/
 
     Point centerPoint(x, y);
     return Circle(centerPoint, radius);
