@@ -21,6 +21,8 @@ struct Point {
 
     Point(double x, double y);
 
+    Point();
+
     bool operator==(const Point& point) const;
 
     bool operator!=(const Point& point) const;
@@ -48,7 +50,7 @@ struct Point {
 
 class Line {
     double c1, k;
-    Point p1 = p2, p2 = p1;
+    Point p1, p2;
 
 public:
     double A, B, C;
@@ -88,11 +90,11 @@ public:
 class Polygon : public Shape {
 
 protected:
-    vector <Point> vertices;
+    vector<Point> vertices;
 
 
 public:
-    Polygon(vector <Point> points);
+    Polygon(vector<Point> points);
 
     double perimeter() const override;
 
@@ -106,9 +108,13 @@ public:
 
     void reflex(const Point& point) override;
 
-    vector <Point> getVertices();
+    vector<Point> getVertices();
 
     Polygon& operator=(const Polygon& a);
+
+    bool operator==(const Shape& another) override;
+
+    bool operator!=(const Shape& another) override;
 
 };
 
@@ -120,17 +126,17 @@ public:
 
     Triangle(Point p1, Point p2, Point p3);
 
-    Circle inscribedCircle();
+    Circle inscribedCircle() const;
 
-    Circle circumscribedCircle();
+    Circle circumscribedCircle() const;
 
-    Circle ninePointsCircle();
+    Circle ninePointsCircle() const;
 
-    Point orthocenter();
+    Point orthocenter() const;
 
-    Line EulerLine();
+    Line EulerLine() const;
 
-    Point centroid();
+    Point centroid() const;
 
 
 };
@@ -141,9 +147,8 @@ public:
 
     Rectangle(Point p1, Point p2, int k);
 
-    bool operator==(const Shape& another) override;
 
-    bool operator!=(const Shape& another) override;
+    pair<Line, Line> diagonals();
 };
 
 
@@ -152,6 +157,10 @@ class Square : public Rectangle {
 public:
 
     Square(Point p1, Point p2);
+
+    Circle circumscribedCircle() const;
+
+    Circle inscribedCircle() const;
 };
 
 class Ellipse : public Shape {
