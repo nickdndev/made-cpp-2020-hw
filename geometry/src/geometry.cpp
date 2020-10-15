@@ -1,8 +1,6 @@
-//#pragma once
 #include <algorithm>
 #include <utility>
 #include <vector>
-#include <complex>
 #include "geometry.h"
 #include <cmath>
 
@@ -100,7 +98,6 @@ bool Line::operator!=(const Point& point) const {
 }
 
 bool Line::operator==(const Line& line) const {
-
     return abs(B / A - line.B / line.A) <= EPS && abs(C / A - line.C / line.A) <= EPS;
 }
 
@@ -108,43 +105,41 @@ bool Line::operator!=(const Line& line) const {
     return !(*this == line);
 }
 
+bool Shape::operator==(const Shape& another) {
+    if (typeid(*this) == typeid(another)) {
 
-Polygon::Polygon(vector<Point> points_) : points(std::move(points_)) {
-
-}
-
-bool Polygon::operator==(const Polygon& polygon) const {
-    if (polygon.points.size() != points.size())
-        return false;
-
-    for (size_t i = 0; i < points.size(); i++) {
-
-        Point pointLeft = points[i];
-        bool exist = false;
-        for (size_t j = 0; j < points.size(); j++) {
-            Point pointRight = polygon.points[j];
-            if (pointRight == pointLeft)
-                exist = true;
-        }
-
-        if (!exist)
-            return false;
-
+        double a1 = area();
+        double a2 = another.area();
+        return abs(area() - another.area()) <= EPS;
     }
-    return true;
+
+    return false;
 }
 
-bool Polygon::operator!=(const Polygon& polygon) const {
-    return !(*this == polygon);;
+bool Shape::operator!=(const Shape& another) {
+
+    return !(*this == another);
+}
+
+
+Polygon::Polygon(vector <Point> points_) : points(std::move(points_)) {
+
 }
 
 double Polygon::perimeter() const {
-    return 0;
+    double perimeter = 0.;
+    size_t j = points.size() - 1;
+    for (size_t i = 0; i < points.size(); i++) {
+        perimeter += sqrt(pow((points[j].x - points[i].x), 2) + pow((points[j].y - points[i].y), 2));
+        j = i;
+    }
+
+    return perimeter;
 }
 
 double Polygon::area() const {
 
-    double area = 0.0;
+    double area = 0.;
 
     size_t j = points.size() - 1;
     for (size_t i = 0; i < points.size(); i++) {
@@ -190,8 +185,8 @@ void Polygon::scale(Point center, double coefficient) {
     }
 }
 
-vector<Point> Polygon::getVertices() {
-    vector<Point> vertices;
+vector <Point> Polygon::getVertices() {
+    vector <Point> vertices;
     for (const auto& point : points) {
 
         vertices.push_back(point);
@@ -221,7 +216,7 @@ Polygon& Polygon::operator=(const Polygon& a) {
     if (this == &a)
         return *this;
 
-    vector<Point> newPoints;
+    vector <Point> newPoints;
     for (const auto& point : a.points) {
         newPoints.push_back(point);
     }
@@ -229,10 +224,6 @@ Polygon& Polygon::operator=(const Polygon& a) {
     points = newPoints;
 
     return *this;
-}
-
-double Triangle::perimeter() const {
-    return 0;
 }
 
 
@@ -308,10 +299,7 @@ Point Triangle::centroid() {
 }
 
 Line Triangle::EulerLine() {
-    Point centroidPoint = centroid();
-    Point circlePoint = circumscribedCircle().center();
-
-    return Line(centroidPoint, circlePoint);
+    return Line(centroid(), circumscribedCircle().center());
 }
 
 Circle Triangle::ninePointsCircle() {
@@ -396,8 +384,12 @@ Rectangle::Rectangle(Point p1, Point p3, int k = 1) : Polygon({}) {
 
 }
 
-double Rectangle::perimeter() const {
-    return Polygon::perimeter();
+bool Rectangle::operator==(const Shape& another) {
+    return abs(area() - another.area()) <= EPS;
+}
+
+bool Rectangle::operator!=(const Shape& another) {
+    return !(*this == another);
 }
 
 Square::Square(Point p1, Point p2) : Rectangle(p1, p2) {
@@ -437,6 +429,14 @@ void Ellipse::scale(Point center, double coefficient) {
 
 }
 
+bool Ellipse::operator==(const Shape& another) {
+    return abs(area() - another.area()) <= EPS;
+}
+
+bool Ellipse::operator!=(const Shape& another) {
+    return !(*this == another);
+}
+
 
 Circle::Circle(Point p1, double r) : Ellipse(p1, p1, r * 2.) {
 
@@ -450,20 +450,14 @@ double Circle::radius() {
     return a;
 }
 
-bool Circle::operator==(const Circle& circle) const {
-    return a == circle.a;
-}
-
 void Circle::scale(Point center, double coefficient) {
 
     Point pointRad(focus1.x + a, focus1.y);
 
     scalePoint(focus1, center, coefficient);
     scalePoint(pointRad, center, coefficient);
+    focus2 = focus1;
 
-    pointRad.x;
-
-    double radius = sqrt(pow((focus1.x - pointRad.x), 2) + pow((focus1.y - pointRad.y), 2));
-    pointRad.x;
-    a = radius;
+    a = sqrt(pow((focus1.x - pointRad.x), 2) + pow((focus1.y - pointRad.y), 2));
 }
+

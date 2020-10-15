@@ -78,18 +78,21 @@ public:
     virtual void rotate(Point center, double angle) = 0;
 
     virtual void scale(Point center, double coefficient) = 0;
-    // virtual bool operator==(const Shape& another);
+
+    virtual bool operator==(const Shape& another);
+
+    virtual bool operator!=(const Shape& another);
 };
 
 
 class Polygon : public Shape {
 
 protected:
-    vector<Point> points;
+    vector <Point> points;
 
 
 public:
-    Polygon(vector<Point> points);
+    Polygon(vector <Point> points);
 
     double perimeter() const override;
 
@@ -101,11 +104,7 @@ public:
 
     void reflex(const Line& line);
 
-    vector<Point> getVertices();
-
-    bool operator==(const Polygon& polygon) const;
-
-    bool operator!=(const Polygon& polygon) const;
+    vector <Point> getVertices();
 
     Polygon& operator=(const Polygon& a);
 
@@ -118,8 +117,6 @@ class Triangle : public Polygon {
 public:
 
     Triangle(Point p1, Point p2, Point p3);
-
-    double perimeter() const override;
 
     Circle inscribedCircle();
 
@@ -142,11 +139,9 @@ public:
 
     Rectangle(Point p1, Point p2, int k);
 
-    double perimeter() const override;
+    bool operator==(const Shape& another) override;
 
-    // double area() const override;
-
-
+    bool operator!=(const Shape& another) override;
 };
 
 
@@ -181,6 +176,10 @@ public:
     void scale(Point center, double coefficient) override;
 
     double eccentricity() const;
+
+    bool operator==(const Shape& another) override;
+
+    bool operator!=(const Shape& another) override;
 };
 
 class Circle : public Ellipse {
@@ -194,7 +193,5 @@ public:
     double radius();
 
     void scale(Point center, double coefficient) override;
-
-    bool operator==(const Circle& circle) const;
 
 };
