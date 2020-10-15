@@ -8,6 +8,8 @@
 
 using namespace std;
 
+const double EPS = 1e-6;
+
 Point::Point(double x_, double y_) : x(x_), y(y_) {
 
 }
@@ -95,6 +97,15 @@ bool Line::operator==(const Point& point) const {
 
 bool Line::operator!=(const Point& point) const {
     return false;
+}
+
+bool Line::operator==(const Line& line) const {
+
+    return abs(B / A - line.B / line.A) <= EPS && abs(C / A - line.C / line.A) <= EPS;
+}
+
+bool Line::operator!=(const Line& line) const {
+    return !(*this == line);
 }
 
 
@@ -303,6 +314,76 @@ Line Triangle::EulerLine() {
     return Line(centroidPoint, circlePoint);
 }
 
+Circle Triangle::ninePointsCircle() {
+
+    Point pointA = points[0];
+    Point pointB = points[1];
+    Point pointC = points[2];
+
+    double Dx = pointA.x / 2 + pointB.x / 2;
+    double Dy = pointA.y / 2 + pointB.y / 2;
+
+    double Ex = pointB.x / 2 + pointC.x / 2;
+    double Ey = pointB.y / 2 + pointC.y / 2;
+
+    double Fx = pointC.x / 2 + pointA.x / 2;
+    double Fy = pointC.y / 2 + pointA.y / 2;
+
+
+    double res1 = (Dy - Ey)
+                  * ((Fx - Ex) * (Fx + Ex) + (Fy - Ey) * (Fy + Ey))
+                  - (Fy - Ey)
+                    * ((Dx - Ex) * (Dx + Ex) + (Dy - Ey) * (Dy + Ey));
+
+    double res2 = (2 * (Fy - Ey) * (Ex - Dx) -
+                   2 * (Ex - Fx) * (Dy - Ey));
+
+
+    double x = res1 / res2;
+
+
+    double res3 = (Ex - Fx)
+                  * ((Dx - Ex) * (Dx + Ex) + (Dy - Ey) * (Dy + Ey))
+                  - (Ex - Dx)
+                    * ((Fx - Ex) * (Fx + Ex) + (Fy - Ey) * (Fy + Ey));
+
+    double res4 = (2 * (Ey - Fy) * (Ex - Dx) -
+                   2 * (Ex - Fx) * (Ey - Dy));
+
+
+    double y = res3 / res4;
+    double radius = sqrt(pow((Dx - x), 2) + pow((Dy - y), 2));
+
+    Point centerPoint(x, y);
+    return Circle(centerPoint, radius);
+}
+
+Point Triangle::orthocenter() {
+
+
+    Point pointA = points[0];
+    Point pointB = points[1];
+    Point pointC = points[2];
+
+
+    double excludeInf = 1.0000000001;
+
+    double m5 = (-1 / ((pointB.y * excludeInf - pointC.y) / (pointB.x - pointC.x)));
+
+    double m6 = (-1 / ((pointA.y * excludeInf - pointB.y) / (pointA.x - pointB.x)));
+
+    double b5 = pointA.y - (m5 * (pointA.x));
+    double b6 = pointC.y - (m6 * (pointC.x));
+
+
+    double x = (b6 - b5) / (m5 - m6);
+
+    double y = (m5 * b6 - m6 * b5) / (m5 - m6);
+
+
+    return Point(x, y);
+}
+
 
 Rectangle::Rectangle(Point p1, Point p3, int k = 1) : Polygon({}) {
     Point p2(p1.x, p3.y);
@@ -371,4 +452,18 @@ double Circle::radius() {
 
 bool Circle::operator==(const Circle& circle) const {
     return a == circle.a;
+}
+
+void Circle::scale(Point center, double coefficient) {
+
+    Point pointRad(focus1.x + a, focus1.y);
+
+    scalePoint(focus1, center, coefficient);
+    scalePoint(pointRad, center, coefficient);
+
+    pointRad.x;
+
+    double radius = sqrt(pow((focus1.x - pointRad.x), 2) + pow((focus1.y - pointRad.y), 2));
+    pointRad.x;
+    a = radius;
 }

@@ -63,6 +63,10 @@ public:
 
     bool operator!=(const Point& point) const;
 
+    bool operator==(const Line& line) const;
+
+    bool operator!=(const Line& line) const;
+
 };
 
 class Shape {
@@ -120,6 +124,10 @@ public:
     Circle inscribedCircle();
 
     Circle circumscribedCircle();
+
+    Circle ninePointsCircle();
+
+    Point orthocenter();
 
     Line EulerLine();
 
@@ -184,6 +192,8 @@ public:
     Point center();
 
     double radius();
+
+    void scale(Point center, double coefficient) override;
 
     bool operator==(const Circle& circle) const;
 
