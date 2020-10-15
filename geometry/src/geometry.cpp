@@ -7,13 +7,14 @@
 using namespace std;
 
 const double EPS = 1e-6;
+const double INF_OVER = 1 + 1e-8;
 
 Point::Point(double x_, double y_) : x(x_), y(y_) {
 
 }
 
 bool Point::operator==(const Point& point) const {
-    return x == point.x && y == point.y;
+    return abs(x - point.y) <= EPS && abs(y - point.y) <= EPS;
 }
 
 bool Point::operator!=(const Point& point) const {
@@ -89,13 +90,6 @@ Line::Line(double k_, double c1_) : k(k_), c1(c1_) {
     C = c1;
 }
 
-bool Line::operator==(const Point& point) const {
-    return false;
-}
-
-bool Line::operator!=(const Point& point) const {
-    return false;
-}
 
 bool Line::operator==(const Line& line) const {
     return abs(B / A - line.B / line.A) <= EPS && abs(C / A - line.C / line.A) <= EPS;
@@ -122,15 +116,15 @@ bool Shape::operator!=(const Shape& another) {
 }
 
 
-Polygon::Polygon(vector <Point> points_) : points(std::move(points_)) {
+Polygon::Polygon(vector <Point> points_) : vertices(std::move(points_)) {
 
 }
 
 double Polygon::perimeter() const {
     double perimeter = 0.;
-    size_t j = points.size() - 1;
-    for (size_t i = 0; i < points.size(); i++) {
-        perimeter += sqrt(pow((points[j].x - points[i].x), 2) + pow((points[j].y - points[i].y), 2));
+    size_t j = vertices.size() - 1;
+    for (size_t i = 0; i < vertices.size(); i++) {
+        perimeter += sqrt(pow((vertices[j].x - vertices[i].x), 2) + pow((vertices[j].y - vertices[i].y), 2));
         j = i;
     }
 
@@ -141,16 +135,13 @@ double Polygon::area() const {
 
     double area = 0.;
 
-    size_t j = points.size() - 1;
-    for (size_t i = 0; i < points.size(); i++) {
-        area += (points[j].x + points[i].x) * (points[j].y - points[i].y);
+    size_t j = vertices.size() - 1;
+    for (size_t i = 0; i < vertices.size(); i++) {
+        area += (vertices[j].x + vertices[i].x) * (vertices[j].y - vertices[i].y);
         j = i;
     }
 
-    area = abs(area / 2.0);
-
-
-    return area;
+    return abs(area / 2.0);
 }
 
 
@@ -167,32 +158,32 @@ void rotatePoint(Point& point, Point center, double angle) {
     point.y = yNew + center.y;
 }
 
-void Polygon::rotate(Point center, double angle) {
-    for (std::size_t i = 0; i < points.size(); i++) {
-        rotatePoint(points[i], center, angle);
+void Polygon::rotate(const Point& center, double angle) {
+    for (std::size_t i = 0; i < vertices.size(); i++) {
+        rotatePoint(vertices[i], center, angle);
     }
 }
 
-void scalePoint(Point& point, Point& center, double coefficient) {
+void scalePoint(Point& point, const Point& center, double coefficient) {
     point.x = coefficient * (point.x - center.x) + center.x;
     point.y = coefficient * (point.y - center.y) + center.y;
 }
 
 
-void Polygon::scale(Point center, double coefficient) {
-    for (std::size_t i = 0; i < points.size(); i++) {
-        scalePoint(points[i], center, coefficient);
+void Polygon::scale(const Point& center, double coefficient) {
+    for (std::size_t i = 0; i < vertices.size(); i++) {
+        scalePoint(vertices[i], center, coefficient);
     }
 }
 
 vector <Point> Polygon::getVertices() {
-    vector <Point> vertices;
-    for (const auto& point : points) {
+    vector <Point> verticesNew;
+    for (const auto& point : vertices) {
 
-        vertices.push_back(point);
+        verticesNew.push_back(point);
     }
 
-    return vertices;
+    return verticesNew;
 }
 
 void reflectPoint(Point& point, const Line& line) {
@@ -206,8 +197,20 @@ void reflectPoint(Point& point, const Line& line) {
 
 }
 
+void reflectPoint(Point& point, const Point& reflectPoint) {
+    point.x = reflectPoint.x + (reflectPoint.x - point.x);
+    point.y = reflectPoint.y + (reflectPoint.y - point.y);
+
+}
+
+void Polygon::reflex(const Point& refPoint) {
+    for (auto& point : vertices) {
+        reflectPoint(point, refPoint);
+    }
+}
+
 void Polygon::reflex(const Line& line) {
-    for (auto& point : points) {
+    for (auto& point : vertices) {
         reflectPoint(point, line);
     }
 }
@@ -217,11 +220,11 @@ Polygon& Polygon::operator=(const Polygon& a) {
         return *this;
 
     vector <Point> newPoints;
-    for (const auto& point : a.points) {
+    for (const auto& point : a.vertices) {
         newPoints.push_back(point);
     }
 
-    points = newPoints;
+    vertices = newPoints;
 
     return *this;
 }
@@ -231,11 +234,12 @@ Triangle::Triangle(Point p1_, Point p2_, Point p3_) : Polygon({p1_, p2_, p3_}) {
 
 }
 
+
 Circle Triangle::inscribedCircle() {
 
-    Point pointA = points[0];
-    Point pointB = points[1];
-    Point pointC = points[2];
+    Point pointA = vertices[0];
+    Point pointB = vertices[1];
+    Point pointC = vertices[2];
 
     double c = sqrt(pow((pointB.y - pointA.y), 2) + pow((pointB.x - pointA.x), 2));
     double a = sqrt(pow((pointC.y - pointB.y), 2) + pow((pointC.x - pointB.x), 2));
@@ -252,9 +256,9 @@ Circle Triangle::inscribedCircle() {
 }
 
 Circle Triangle::circumscribedCircle() {
-    Point pointA = points[0];
-    Point pointB = points[1];
-    Point pointC = points[2];
+    Point pointA = vertices[0];
+    Point pointB = vertices[1];
+    Point pointC = vertices[2];
 
     double res1 = (pointA.y - pointB.y)
                   * ((pointC.x - pointB.x) * (pointC.x + pointB.x) + (pointC.y - pointB.y) * (pointC.y + pointB.y))
@@ -288,9 +292,9 @@ Circle Triangle::circumscribedCircle() {
 }
 
 Point Triangle::centroid() {
-    Point pointA = points[0];
-    Point pointB = points[1];
-    Point pointC = points[2];
+    Point pointA = vertices[0];
+    Point pointB = vertices[1];
+    Point pointC = vertices[2];
 
     double x = (pointA.x + pointB.x + pointC.x) / 3;
     double y = (pointA.y + pointB.y + pointC.y) / 3;
@@ -304,9 +308,9 @@ Line Triangle::EulerLine() {
 
 Circle Triangle::ninePointsCircle() {
 
-    Point pointA = points[0];
-    Point pointB = points[1];
-    Point pointC = points[2];
+    Point pointA = vertices[0];
+    Point pointB = vertices[1];
+    Point pointC = vertices[2];
 
     double Dx = pointA.x / 2 + pointB.x / 2;
     double Dy = pointA.y / 2 + pointB.y / 2;
@@ -348,26 +352,18 @@ Circle Triangle::ninePointsCircle() {
 
 Point Triangle::orthocenter() {
 
+    Point pointA = vertices[0];
+    Point pointB = vertices[1];
+    Point pointC = vertices[2];
 
-    Point pointA = points[0];
-    Point pointB = points[1];
-    Point pointC = points[2];
+    double cfA = (-1 / ((pointB.y * INF_OVER - pointC.y) / (pointB.x - pointC.x)));
+    double cfC = (-1 / ((pointA.y * INF_OVER - pointB.y) / (pointA.x - pointB.x)));
 
+    double dA = pointA.y - (cfA * (pointA.x));
+    double bC = pointC.y - (cfC * (pointC.x));
 
-    double excludeInf = 1.0000000001;
-
-    double m5 = (-1 / ((pointB.y * excludeInf - pointC.y) / (pointB.x - pointC.x)));
-
-    double m6 = (-1 / ((pointA.y * excludeInf - pointB.y) / (pointA.x - pointB.x)));
-
-    double b5 = pointA.y - (m5 * (pointA.x));
-    double b6 = pointC.y - (m6 * (pointC.x));
-
-
-    double x = (b6 - b5) / (m5 - m6);
-
-    double y = (m5 * b6 - m6 * b5) / (m5 - m6);
-
+    double x = (bC - dA) / (cfA - cfC);
+    double y = (cfA * bC - cfC * dA) / (cfA - cfC);
 
     return Point(x, y);
 }
@@ -377,10 +373,10 @@ Rectangle::Rectangle(Point p1, Point p3, int k = 1) : Polygon({}) {
     Point p2(p1.x, p3.y);
     Point p4(p3.x, p1.y);
 
-    points.push_back(p1);
-    points.push_back(p2);
-    points.push_back(p3);
-    points.push_back(p4);
+    vertices.push_back(p1);
+    vertices.push_back(p2);
+    vertices.push_back(p3);
+    vertices.push_back(p4);
 
 }
 
@@ -421,12 +417,19 @@ double Ellipse::area() const {
     return M_PI * a * b;
 }
 
-void Ellipse::rotate(Point center, double angle) {
-
+void Ellipse::rotate(const Point& center, double angle) {
+    rotatePoint(focus1, center, angle);
+    rotatePoint(focus2, center, angle);
 }
 
-void Ellipse::scale(Point center, double coefficient) {
+void Ellipse::scale(const Point& center, double coefficient) {
+    Point pointRad((focus1.x + focus2.x) / 2 + a, focus1.y);
 
+    scalePoint(focus1, center, coefficient);
+    scalePoint(focus2, center, coefficient);
+    scalePoint(pointRad, center, coefficient);
+
+    a = sqrt(pow(((focus1.x + focus2.x) / 2 - pointRad.x), 2) + pow(((focus1.y + focus2.y) / 2 - pointRad.y), 2));
 }
 
 bool Ellipse::operator==(const Shape& another) {
@@ -435,6 +438,16 @@ bool Ellipse::operator==(const Shape& another) {
 
 bool Ellipse::operator!=(const Shape& another) {
     return !(*this == another);
+}
+
+void Ellipse::reflex(const Line& line) {
+    reflectPoint(focus1, line);
+    reflectPoint(focus2, line);
+}
+
+void Ellipse::reflex(const Point& point) {
+    reflectPoint(focus1, point);
+    reflectPoint(focus2, point);
 }
 
 
@@ -449,15 +462,3 @@ Point Circle::center() {
 double Circle::radius() {
     return a;
 }
-
-void Circle::scale(Point center, double coefficient) {
-
-    Point pointRad(focus1.x + a, focus1.y);
-
-    scalePoint(focus1, center, coefficient);
-    scalePoint(pointRad, center, coefficient);
-    focus2 = focus1;
-
-    a = sqrt(pow((focus1.x - pointRad.x), 2) + pow((focus1.y - pointRad.y), 2));
-}
-

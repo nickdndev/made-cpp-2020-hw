@@ -59,10 +59,6 @@ public:
 
     Line(double k, double c1);
 
-    bool operator==(const Point& point) const;
-
-    bool operator!=(const Point& point) const;
-
     bool operator==(const Line& line) const;
 
     bool operator!=(const Line& line) const;
@@ -75,9 +71,13 @@ public:
 
     virtual double area() const = 0;
 
-    virtual void rotate(Point center, double angle) = 0;
+    virtual void rotate(const Point& center, double angle) = 0;
 
-    virtual void scale(Point center, double coefficient) = 0;
+    virtual void scale(const Point& center, double coefficient) = 0;
+
+    virtual void reflex(const Line& line) = 0;
+
+    virtual void reflex(const Point& point) = 0;
 
     virtual bool operator==(const Shape& another);
 
@@ -88,7 +88,7 @@ public:
 class Polygon : public Shape {
 
 protected:
-    vector <Point> points;
+    vector <Point> vertices;
 
 
 public:
@@ -98,11 +98,13 @@ public:
 
     double area() const override;
 
-    void rotate(Point center, double angle);
+    void rotate(const Point& center, double angle);
 
-    void scale(Point center, double coefficient) override;
+    void scale(const Point& center, double coefficient) override;
 
-    void reflex(const Line& line);
+    void reflex(const Line& line) override;
+
+    void reflex(const Point& point) override;
 
     vector <Point> getVertices();
 
@@ -150,8 +152,6 @@ class Square : public Rectangle {
 public:
 
     Square(Point p1, Point p2);
-
-
 };
 
 class Ellipse : public Shape {
@@ -171,9 +171,13 @@ public:
 
     double area() const override;
 
-    void rotate(Point center, double angle) override;
+    void rotate(const Point& center, double angle) override;
 
-    void scale(Point center, double coefficient) override;
+    void scale(const Point& center, double coefficient) override;
+
+    void reflex(const Line& line) override;
+
+    void reflex(const Point& line) override;
 
     double eccentricity() const;
 
@@ -191,7 +195,4 @@ public:
     Point center();
 
     double radius();
-
-    void scale(Point center, double coefficient) override;
-
 };
