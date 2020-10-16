@@ -80,7 +80,7 @@ double normVector(const vector<double> &vec1) {
     norm += item * item;
   }
 
-  return norm;
+  return sqrt(norm);
 }
 
 bool operator||(const vector<double> &vec1, const vector<double> &vec2) {
@@ -91,7 +91,7 @@ bool operator||(const vector<double> &vec1, const vector<double> &vec2) {
   if (normVec1 <= 0 || normVec2 <= 0)
     return true;
 
-  double res = abs((vec1 * vec2) / (sqrt(normVec1) * sqrt(normVec2)));
+  double res = abs((vec1 * vec2) / (normVec1 * normVec2));
   return abs(res - 1) < ERROR_PRECISION;
 }
 
@@ -104,7 +104,7 @@ bool operator&&(const vector<double> &vec1, const vector<double> &vec2) {
     return true;
 
   double scal_result = vec1 * vec2;
-  double res = (scal_result) / (sqrt(normVec1) * sqrt(normVec2));
+  double res = (scal_result) / (normVec1 * normVec2);
   return abs(res - 1) < ERROR_PRECISION && scal_result > 0;
 }
 
