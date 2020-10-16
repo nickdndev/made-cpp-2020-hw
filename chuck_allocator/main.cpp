@@ -27,7 +27,7 @@ public:
   }
 
   bool contains(const std::uint8_t *address) const noexcept {
-    const std::uint8_t *start_chunk_address =
+    const auto *start_chunk_address =
         reinterpret_cast<const std::uint8_t *>(blocks.data());
     const std::uint8_t *end_chunk_address = start_chunk_address + CHUNK_SIZE;
     return (start_chunk_address <= address) && (address <= end_chunk_address);
@@ -40,6 +40,7 @@ public:
           getAlignmentPadding(not_aligned_address, HEADER_LENGTH);*/
     const std::uint32_t alloc_size_with_alignment =
         static_cast<std::uint32_t>(allocation_size /* + alignment_padding*/);
+
     if ((!point_end_block) || (alloc_size_with_alignment > *point_end_block)) {
       return nullptr;
     }
@@ -111,21 +112,13 @@ public:
 
 } // namespace details
 
-template <typename T> class Allocator {
+class AllocationMemory {
   std::deque<details::Chunk<16'384u>> chunks{1u};
 
 public:
-  using value_type = T;
-  using pointer = T *;
-  using const_pointer = const T *;
-  using reference = T &;
-  using const_reference = const T &;
-  using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
+  AllocationMemory()= default;
 
-  template <typename U> friend class Allocator;
-
-  template <typename U> struct rebind { using other = Allocator<U>; };
+  ~AllocationMemory() {};
 
   void *allocate_object(std::size_t size) {
 
@@ -158,19 +151,62 @@ public:
       }
     }
   }
+};
+
+template <typename T> class Allocator {
+  AllocationMemory *memory;
+  int *number_instances;
 
 public:
-  Allocator() = default;
+  using value_type = T;
+  using pointer = T *;
+  using const_pointer = const T *;
+  using reference = T &;
+  using const_reference = const T &;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
 
-  Allocator(const Allocator &other) noexcept {}
+  template <typename U> friend class Allocator;
 
-  template <typename U> Allocator(const Allocator<U> &other) noexcept {}
+  template <typename U> struct rebind { using other = Allocator<U>; };
 
-  T *allocate(std::size_t n) {
-    return static_cast<T *>(allocate_object(n * sizeof(T)));
+public:
+  Allocator() {
+    memory = new AllocationMemory();
+    number_instances = new int;
+    *number_instances = 1;
+  };
+  Allocator(const Allocator &other) noexcept {
+    memory = other.memory;
+    number_instances = other.number_instances;
+    (*number_instances)++;
   }
 
-  void deallocate(T *p, std::size_t n) { deallocate_object(p, n * sizeof(T)); }
+  ~Allocator() {
+    if ((*number_instances) > 1) {
+      (*number_instances)--;
+      std::cout
+          << "call destructor for coped allocator. number instance remains : "
+          << (*number_instances) << std::endl;
+    } else {
+      delete memory;
+      std::cout << "destroy allocator and release memory" << std::endl;
+    }
+  }
+
+  template <typename U> Allocator(const Allocator<U> &other) noexcept {
+    memory = other.memory;
+    number_instances = other.number_instances;
+    (*number_instances)++;
+  }
+
+  T *allocate(std::size_t n) {
+    return static_cast<T *>((*memory).allocate_object(n * sizeof(T)));
+  }
+
+  void deallocate(T *p, std::size_t n) {
+    (*memory).deallocate_object(p, n * sizeof(T));
+  }
 
   template <typename U, typename... Args>
   void construct(U *ptr, Args &&... args) {
@@ -221,8 +257,17 @@ using custom_string =
 std::basic_string<char, std::char_traits<char>, CustomAllocator<char>>;
 
 int main(int argc, char **argv) {
+  Allocator<int> io;
 
+  Allocator<int> io3(io);
+
+  custom_vector<int> vector2{io};
+  vector2.push_back(1);
+
+  Allocator<int> io2(io);
   CustomAllocator<int> custom_int_allocator;
+
+  CustomAllocator<float> custom_int_allocator2{custom_int_allocator};
   custom_vector<int> vector{custom_int_allocator};
   for (int i = 0u; i < 100; ++i) {
     vector.push_back(i);
