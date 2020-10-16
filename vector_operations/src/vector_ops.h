@@ -158,4 +158,4 @@ stringstream &operator<<(stringstream &stream, const vector<double> &vec) {
 
   return stream;
 }
-}
+} // namespace task
