@@ -47,7 +47,6 @@ struct Point {
 };
 
 class Line {
-  double c1, k;
   Point p1, p2;
 
 public:
@@ -55,9 +54,9 @@ public:
 
   Line(Point p1, Point p2);
 
-  Line(Point p1, double c1);
+  Line(Point p1, double c);
 
-  Line(double k, double c1);
+  Line(double b, double c);
 
   bool operator==(const Line &line) const;
 
@@ -78,9 +77,9 @@ public:
 
   virtual void reflex(const Point &point) = 0;
 
-  virtual bool operator==(const Shape &another);
+  virtual bool operator==(const Shape &another) = 0;
 
-  virtual bool operator!=(const Shape &another);
+  virtual bool operator!=(const Shape &another) = 0;
 };
 
 class Polygon : public Shape {
