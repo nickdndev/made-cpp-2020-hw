@@ -47,14 +47,14 @@ struct Point {
 };
 
 class Line {
-  Point p1, p2;
+  Point point_a, point_b;
 
 public:
   double A, B, C;
 
-  Line(Point p1, Point p2);
+  Line(Point point_a, Point point_b);
 
-  Line(Point p1, double c);
+  Line(Point point_a, double c);
 
   Line(double b, double c);
 
@@ -94,7 +94,7 @@ public:
 
   double area() const override;
 
-  void rotate(const Point &center, double angle);
+  void rotate(const Point &center, double angle) override;
 
   void scale(const Point &center, double coefficient) override;
 
@@ -103,6 +103,8 @@ public:
   void reflex(const Point &point) override;
 
   vector<Point> getVertices();
+
+  size_t verticesCount() const;
 
   Polygon &operator=(const Polygon &a);
 
@@ -135,7 +137,7 @@ class Rectangle : public Polygon {
 public:
   Rectangle(Point p1, Point p2, int k);
 
-  pair<Line, Line> diagonals();
+  pair<Line, Line> diagonals() const;
 };
 
 class Square : public Rectangle {
@@ -151,8 +153,8 @@ public:
 class Ellipse : public Shape {
 
 protected:
-  Point focus1;
-  Point focus2;
+  Point focus_a;
+  Point focus_b;
   double a;
 
 public:
@@ -172,6 +174,8 @@ public:
 
   double eccentricity() const;
 
+  pair<Point, Point> focuses() const;
+
   bool operator==(const Shape &another) override;
 
   bool operator!=(const Shape &another) override;
@@ -182,7 +186,7 @@ class Circle : public Ellipse {
 public:
   Circle(Point p1, double r);
 
-  Point center();
+  Point center() const;
 
-  double radius();
+  double radius() const;
 };

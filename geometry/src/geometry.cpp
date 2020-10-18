@@ -9,7 +9,7 @@ using namespace std;
 const double EPS = 1e-6;
 const double INF_OVER = 1 + 1e-8;
 
-double calculateLengthByPoints(const Point &pointA, const Point &pointB) {
+double normVector(const Point &pointA, const Point &pointB) {
   return sqrt(pow((pointB.y - pointA.y), 2) + pow((pointB.x - pointA.x), 2));
 }
 
@@ -79,13 +79,15 @@ Point &Point::operator=(const Point &a) {
   return *this;
 }
 
-Line::Line(Point p1_, Point p2_) : p1(p1_), p2(p2_) {
-  B = p1.y - p2.y;
-  A = p2.x - p1.x;
-  C = p1.x * p2.y - p2.x * p1.y;
+Line::Line(Point p1_, Point p2_) : point_a(p1_), point_b(p2_) {
+  B = point_a.y - point_b.y;
+  A = point_b.x - point_a.x;
+  C = point_a.x * point_b.y - point_b.x * point_a.y;
 }
 
-Line::Line(Point p1, double c1_) : p1(p1), C(c1_) { p2 = Point(c1_, c1_); }
+Line::Line(Point p1, double c1_) : point_a(p1), C(c1_) {
+  point_b = Point(c1_, c1_);
+}
 
 Line::Line(double b_, double c_) : A(1), B(b_), C(c_) {}
 
@@ -102,8 +104,7 @@ double Polygon::perimeter() const {
   double perimeter = 0.;
   size_t j = vertices.size() - 1;
   for (size_t i = 0; i < vertices.size(); i++) {
-    perimeter += sqrt(pow((vertices[j].x - vertices[i].x), 2) +
-        pow((vertices[j].y - vertices[i].y), 2));
+    perimeter += normVector(vertices[j], vertices[i]);
     j = i;
   }
 
@@ -153,14 +154,7 @@ void Polygon::scale(const Point &center, double coefficient) {
   }
 }
 
-vector<Point> Polygon::getVertices() {
-  vector<Point> verticesNew;
-  for (const auto &point : vertices) {
-    verticesNew.push_back(point);
-  }
-
-  return verticesNew;
-}
+vector<Point> Polygon::getVertices() { return vertices; }
 
 void reflectPoint(Point &point, const Line &line) {
   double newX = (point.x * (pow(line.A, 2) - pow(line.B, 2)) -
@@ -212,7 +206,7 @@ bool Polygon::operator==(const Shape &another) {
   const auto another_polygon = dynamic_cast<const Polygon *>(&another);
 
   if (another_polygon == nullptr) {
-    return true;
+    return false;
   }
 
   if ((*another_polygon).vertices.size() != vertices.size()) {
@@ -235,6 +229,8 @@ bool Polygon::operator==(const Shape &another) {
 
 bool Polygon::operator!=(const Shape &another) { return !(*this == another); }
 
+size_t Polygon::verticesCount() const { return vertices.size(); }
+
 Triangle::Triangle(Point p1_, Point p2_, Point p3_)
     : Polygon({p1_, p2_, p3_}) {}
 
@@ -244,9 +240,9 @@ Circle Triangle::inscribedCircle() const {
   Point pointB = vertices[1];
   Point pointC = vertices[2];
 
-  double c = calculateLengthByPoints(pointA, pointB);
-  double a = calculateLengthByPoints(pointC, pointB);
-  double b = calculateLengthByPoints(pointC, pointA);
+  double c = normVector(pointA, pointB);
+  double a = normVector(pointC, pointB);
+  double b = normVector(pointC, pointA);
 
   double s = (a + b + c) / 2;
 
@@ -293,7 +289,7 @@ Circle Triangle::circumscribedCircle() const {
 
   Point centerPoint = findCenterCircumscribedCircle(pointA, pointB, pointC);
 
-  double radius = calculateLengthByPoints(pointA, centerPoint);
+  double radius = normVector(pointA, centerPoint);
 
   return Circle(centerPoint, radius);
 }
@@ -326,7 +322,7 @@ Circle Triangle::ninePointsCircle() const {
   Point centerPoint =
       findCenterCircumscribedCircle(pointMidA, pointMidB, pointMidC);
 
-  double radius = calculateLengthByPoints(pointMidA, centerPoint);
+  double radius = normVector(pointMidA, centerPoint);
 
   return Circle(centerPoint, radius);
 }
@@ -353,7 +349,7 @@ Point Triangle::orthocenter() const {
 
 Rectangle::Rectangle(Point p1, Point p3, int k = 1) : Polygon({}) {
 
-  double diagonal = calculateLengthByPoints(p1, p3);
+  double diagonal = normVector(p1, p3);
 
   double ad_side = sqrt((diagonal * diagonal) / (1 + k * k));
   double dc_side = ad_side / k;
@@ -379,7 +375,7 @@ Rectangle::Rectangle(Point p1, Point p3, int k = 1) : Polygon({}) {
   vertices.push_back(new_point_candidate_D);
 }
 
-pair<Line, Line> Rectangle::diagonals() {
+pair<Line, Line> Rectangle::diagonals() const {
 
   Line diagonalAC(Point(vertices[0].x, vertices[0].y),
                   Point(vertices[2].x, vertices[2].y));
@@ -393,7 +389,7 @@ Square::Square(Point p1, Point p2) : Rectangle(p1, p2) {}
 
 Circle Square::circumscribedCircle() const {
 
-  double radius = calculateLengthByPoints(vertices[0], vertices[3]);
+  double radius = normVector(vertices[0], vertices[3]);
 
   Point center((vertices[0].x + vertices[1].x) / 2,
                (vertices[0].y + vertices[1].y) / 2);
@@ -403,7 +399,7 @@ Circle Square::circumscribedCircle() const {
 
 Circle Square::inscribedCircle() const {
 
-  double radius = calculateLengthByPoints(vertices[0], vertices[1]);
+  double radius = normVector(vertices[0], vertices[1]);
 
   Point center((vertices[0].x + vertices[1].x) / 2,
                (vertices[0].y + vertices[1].y) / 2);
@@ -412,10 +408,10 @@ Circle Square::inscribedCircle() const {
 }
 
 Ellipse::Ellipse(Point f1_, Point f2_, double c_)
-    : focus1(f1_), focus2(f2_), a(c_ / 2.) {}
+    : focus_a(f1_), focus_b(f2_), a(c_ / 2.) {}
 
 double Ellipse::eccentricity() const {
-  double c = calculateLengthByPoints(focus1, focus2) / 2;
+  double c = normVector(focus_a, focus_b) / 2;
   double e = c / a;
   return e;
 }
@@ -427,46 +423,58 @@ double Ellipse::perimeter() const {
 double Ellipse::area() const {
 
   double e = eccentricity();
-
   double b = a * sqrt(1 - e * e);
 
   return M_PI * a * b;
 }
 
 void Ellipse::rotate(const Point &center, double angle) {
-  rotatePoint(focus1, center, angle);
-  rotatePoint(focus2, center, angle);
+  rotatePoint(focus_a, center, angle);
+  rotatePoint(focus_b, center, angle);
 }
 
 void Ellipse::scale(const Point &center, double coefficient) {
-  Point pointRad((focus1.x + focus2.x) / 2 + a, focus1.y);
+  Point pointRad((focus_a.x + focus_b.x) / 2 + a, focus_a.y);
 
-  scalePoint(focus1, center, coefficient);
-  scalePoint(focus2, center, coefficient);
+  scalePoint(focus_a, center, coefficient);
+  scalePoint(focus_b, center, coefficient);
   scalePoint(pointRad, center, coefficient);
 
-  a = sqrt(pow(((focus1.x + focus2.x) / 2 - pointRad.x), 2) +
-      pow(((focus1.y + focus2.y) / 2 - pointRad.y), 2));
+  a = sqrt(pow(((focus_a.x + focus_b.x) / 2 - pointRad.x), 2) +
+      pow(((focus_a.y + focus_b.y) / 2 - pointRad.y), 2));
 }
 
 bool Ellipse::operator==(const Shape &another) {
-  return abs(area() - another.area()) <= EPS;
+
+  const auto another_ellipse = dynamic_cast<const Ellipse *>(&another);
+
+  if (another_ellipse == nullptr) {
+    return false;
+  }
+
+  double nornFocusesAnother =
+      normVector((*another_ellipse).focus_a, (*another_ellipse).focus_b);
+  double nornFocusesThis = normVector(focus_a, focus_b);
+
+  return (abs(nornFocusesAnother - nornFocusesThis) <= EPS) &&
+      (((*another_ellipse).a - a) <= EPS);
 }
 
 bool Ellipse::operator!=(const Shape &another) { return !(*this == another); }
 
 void Ellipse::reflex(const Line &line) {
-  reflectPoint(focus1, line);
-  reflectPoint(focus2, line);
+  reflectPoint(focus_a, line);
+  reflectPoint(focus_b, line);
 }
 
 void Ellipse::reflex(const Point &point) {
-  reflectPoint(focus1, point);
-  reflectPoint(focus2, point);
+  reflectPoint(focus_a, point);
+  reflectPoint(focus_b, point);
 }
+pair<Point, Point> Ellipse::focuses() const { return {focus_a, focus_b}; }
 
 Circle::Circle(Point p1, double r) : Ellipse(p1, p1, r * 2.) {}
 
-Point Circle::center() { return focus1; }
+Point Circle::center() const { return focus_a; }
 
-double Circle::radius() { return a; }
+double Circle::radius() const { return a; }
