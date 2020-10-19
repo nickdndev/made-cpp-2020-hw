@@ -13,7 +13,6 @@ double normVector(const Point &pointA, const Point &pointB) {
   return sqrt(pow((pointB.y - pointA.y), 2) + pow((pointB.x - pointA.x), 2));
 }
 
-
 Point::Point(double x_, double y_) : x(x_), y(y_) {}
 
 Point::Point() : x(0.), y(0.) {}
@@ -94,7 +93,7 @@ Line::~Line() {}
 
 bool Line::operator==(const Line &line) const {
   return abs(B / A - line.B / line.A) <= EPS &&
-      abs(C / A - line.C / line.A) <= EPS;
+         abs(C / A - line.C / line.A) <= EPS;
 }
 
 bool Line::operator!=(const Line &line) const { return !(*this == line); }
@@ -163,12 +162,12 @@ vector<Point> Polygon::getVertices() { return vertices; }
 
 void reflectPoint(Point &point, const Line &line) {
   double newX = (point.x * (pow(line.A, 2) - pow(line.B, 2)) -
-      2 * line.B * (line.A * point.y + line.C)) /
-      (pow(line.A, 2) + pow(line.B, 2));
+                 2 * line.B * (line.A * point.y + line.C)) /
+                (pow(line.A, 2) + pow(line.B, 2));
 
   double newY = (point.y * (pow(line.B, 2) - pow(line.A, 2)) -
-      2 * line.A * (line.B * point.x + line.C)) /
-      (pow(line.A, 2) + pow(line.B, 2));
+                 2 * line.A * (line.B * point.x + line.C)) /
+                (pow(line.A, 2) + pow(line.B, 2));
   point.x = newX;
   point.y = newY;
 }
@@ -266,23 +265,23 @@ Point findCenterCircumscribedCircle(const Point &pointA, const Point &pointB,
 
   double numeratorX =
       (pointA.y - pointB.y) * ((pointC.x - pointB.x) * (pointC.x + pointB.x) +
-          (pointC.y - pointB.y) * (pointC.y + pointB.y)) -
-          (pointC.y - pointB.y) * ((pointA.x - pointB.x) * (pointA.x + pointB.x) +
-              (pointA.y - pointB.y) * (pointA.y + pointB.y));
+                               (pointC.y - pointB.y) * (pointC.y + pointB.y)) -
+      (pointC.y - pointB.y) * ((pointA.x - pointB.x) * (pointA.x + pointB.x) +
+                               (pointA.y - pointB.y) * (pointA.y + pointB.y));
 
   double denominatorX = (2 * (pointC.y - pointB.y) * (pointB.x - pointA.x) -
-      2 * (pointB.x - pointC.x) * (pointA.y - pointB.y));
+                         2 * (pointB.x - pointC.x) * (pointA.y - pointB.y));
 
   double x = numeratorX / denominatorX;
 
   double numeratorY =
       (pointB.x - pointC.x) * ((pointA.x - pointB.x) * (pointA.x + pointB.x) +
-          (pointA.y - pointB.y) * (pointA.y + pointB.y)) -
-          (pointB.x - pointA.x) * ((pointC.x - pointB.x) * (pointC.x + pointB.x) +
-              (pointC.y - pointB.y) * (pointC.y + pointB.y));
+                               (pointA.y - pointB.y) * (pointA.y + pointB.y)) -
+      (pointB.x - pointA.x) * ((pointC.x - pointB.x) * (pointC.x + pointB.x) +
+                               (pointC.y - pointB.y) * (pointC.y + pointB.y));
 
   double denominatorY = (2 * (pointB.y - pointC.y) * (pointB.x - pointA.x) -
-      2 * (pointB.x - pointC.x) * (pointB.y - pointA.y));
+                         2 * (pointB.x - pointC.x) * (pointB.y - pointA.y));
 
   double y = numeratorY / denominatorY;
 
@@ -362,7 +361,7 @@ Rectangle::Rectangle(Point p1, Point p3, int k = 1) : Polygon({}) {
   double dc_side = ad_side / k;
 
   double a = (ad_side * ad_side - dc_side * dc_side + diagonal * diagonal) /
-      (2 * diagonal);
+             (2 * diagonal);
   double h = sqrt(ad_side * ad_side - a * a);
 
   Point splitter_diagonal(p1.x + (a / diagonal) * (p3.x - p1.x),
@@ -452,7 +451,7 @@ void Ellipse::scale(const Point &center, double coefficient) {
   scalePoint(pointRad, center, coefficient);
 
   a = sqrt(pow(((focus_a.x + focus_b.x) / 2 - pointRad.x), 2) +
-      pow(((focus_a.y + focus_b.y) / 2 - pointRad.y), 2));
+           pow(((focus_a.y + focus_b.y) / 2 - pointRad.y), 2));
 }
 
 bool Ellipse::operator==(const Shape &another) {
@@ -468,7 +467,7 @@ bool Ellipse::operator==(const Shape &another) {
   double nornFocusesThis = normVector(focus_a, focus_b);
 
   return (abs(nornFocusesAnother - nornFocusesThis) <= EPS) &&
-      (((*another_ellipse).a - a) <= EPS);
+         (((*another_ellipse).a - a) <= EPS);
 }
 
 bool Ellipse::operator!=(const Shape &another) { return !(*this == another); }
