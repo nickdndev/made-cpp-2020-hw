@@ -11,16 +11,18 @@
 #include <utility>
 #include <vector>
 
-namespace details {
-
 template <std::size_t CHUNK_SIZE> class Chunk {
-  static const std::size_t HEADER_LENGTH = 4u;
+
+  static const std::size_t HEADER_LENGTH = 4;
+
+  std::uint32_t *point_end_block;
+  std::set<std::uint32_t *> free_blocks;
+  std::vector<std::uint8_t *> blocks;
 
 public:
   Chunk() {
     blocks.resize(CHUNK_SIZE);
-    std::uint32_t *pointer_header =
-        reinterpret_cast<std::uint32_t *>(blocks.data());
+    auto *pointer_header = reinterpret_cast<std::uint32_t *>(blocks.data());
     *pointer_header = CHUNK_SIZE - HEADER_LENGTH;
     point_end_block = pointer_header;
     free_blocks.insert(pointer_header);
@@ -33,12 +35,12 @@ public:
     return (start_chunk_address <= address) && (address <= end_chunk_address);
   }
 
-  std::uint8_t *reserve_block(std::size_t allocation_size) {
+  std::uint8_t *reserveBlock(std::size_t allocation_size) {
     const std::size_t not_aligned_address =
         reinterpret_cast<std::size_t>(point_end_block) + allocation_size;
     /*  const std::size_t alignment_padding =
           getAlignmentPadding(not_aligned_address, HEADER_LENGTH);*/
-    const std::uint32_t alloc_size_with_alignment =
+    const auto alloc_size_with_alignment =
         static_cast<std::uint32_t>(allocation_size /* + alignment_padding*/);
 
     if ((!point_end_block) || (alloc_size_with_alignment > *point_end_block)) {
@@ -57,7 +59,7 @@ public:
         });
 
     std::uint32_t *header_address = *min_it;
-    std::uint32_t *new_header_address = reinterpret_cast<std::uint32_t *>(
+    auto *new_header_address = reinterpret_cast<std::uint32_t *>(
         reinterpret_cast<std::uint8_t *>(header_address) + HEADER_LENGTH +
             alloc_size_with_alignment);
 
@@ -100,47 +102,41 @@ public:
     }
 
     free_blocks.insert(reinterpret_cast<std::uint32_t *>(header_address));
-    auto forward_it =
-        free_blocks.find(reinterpret_cast<std::uint32_t *>(header_address));
+    /* auto forward_it =
+         free_blocks.find(reinterpret_cast<std::uint32_t *>(header_address));*/
   }
-
-public:
-  std::uint32_t *point_end_block;
-  std::set<std::uint32_t *> free_blocks;
-  std::vector<std::uint8_t *> blocks;
 };
 
-} // namespace details
-
-class AllocationMemory {
-  std::deque<details::Chunk<16'384u>> chunks{1u};
+template <std::size_t CHUNK_SIZE> class AllocationMemory {
+  std::deque<Chunk<CHUNK_SIZE>> chunks{1};
 
 public:
-  AllocationMemory()= default;
+  AllocationMemory() = default;
 
-  ~AllocationMemory() {};
+  ~AllocationMemory() = default;
+  ;
 
   void *allocate_object(std::size_t size) {
 
-    if (size == 0u) {
+    if (size == 0) {
       return nullptr;
     }
 
     for (auto &chunk : chunks) {
-      void *allocated_block = chunk.reserve_block(size);
+      void *allocated_block = chunk.reserveBlock(size);
       if (allocated_block) {
         return allocated_block;
       }
     }
 
-    chunks.push_back(details::Chunk<16'384u>{});
+    chunks.push_back(Chunk<CHUNK_SIZE>{});
     auto &chunk = chunks.back();
-    std::uint8_t *allocated_block = chunk.reserve_block(size);
+    std::uint8_t *allocated_block = chunk.reserveBlock(size);
     return allocated_block;
   }
 
   void deallocate_object(void *p, std::size_t size) {
-    if ((!p) || (size == 0u)) {
+    if ((!p) || (size == 0)) {
       return;
     }
 
@@ -153,9 +149,9 @@ public:
   }
 };
 
-template <typename T> class Allocator {
-  AllocationMemory *memory;
-  int *number_instances;
+template <typename T, std::size_t CHUNK_SIZE = 1024> class Allocator {
+  AllocationMemory<CHUNK_SIZE> *memory;
+  size_t *number_instances;
 
 public:
   using value_type = T;
@@ -166,16 +162,18 @@ public:
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
 
-  template <typename U> friend class Allocator;
+  template <typename U, std::size_t> friend class Allocator;
 
   template <typename U> struct rebind { using other = Allocator<U>; };
 
 public:
   Allocator() {
-    memory = new AllocationMemory();
-    number_instances = new int;
-    *number_instances = 1;
+    memory = new AllocationMemory<CHUNK_SIZE>();
+    number_instances = new size_t(1);
+
+    std::cout << "Allocate memory " << (*number_instances) << std::endl;
   };
+
   Allocator(const Allocator &other) noexcept {
     memory = other.memory;
     number_instances = other.number_instances;
@@ -186,11 +184,11 @@ public:
     if ((*number_instances) > 1) {
       (*number_instances)--;
       std::cout
-          << "call destructor for coped allocator. number instance remains : "
+          << "Call destructor for coped allocator. number instance remains : "
           << (*number_instances) << std::endl;
     } else {
       delete memory;
-      std::cout << "destroy allocator and release memory" << std::endl;
+      std::cout << "Destroy allocator and release memory" << std::endl;
     }
   }
 
@@ -201,11 +199,11 @@ public:
   }
 
   T *allocate(std::size_t n) {
-    return static_cast<T *>((*memory).allocate_object(n * sizeof(T)));
+    return static_cast<T *>(memory->allocate_object(n * sizeof(T)));
   }
 
   void deallocate(T *p, std::size_t n) {
-    (*memory).deallocate_object(p, n * sizeof(T));
+    memory->deallocate_object(p, n * sizeof(T));
   }
 
   template <typename U, typename... Args>
@@ -229,10 +227,6 @@ bool operator!=(const Allocator<T> &lhs, const Allocator<U> &rhs) {
 template <typename T, std::size_t CHUNK_SIZE = 16'384u>
 using CustomAllocator = Allocator<T>;
 
-template <typename T> using CustomAllocatorWithStackChunks = Allocator<T>;
-
-template <typename T> using CustomAllocatorWithHeapChunks = Allocator<T>;
-
 template <typename T> using custom_vector = std::vector<T, CustomAllocator<T>>;
 
 template <typename T> using custom_list = std::list<T, CustomAllocator<T>>;
@@ -240,71 +234,65 @@ template <typename T> using custom_list = std::list<T, CustomAllocator<T>>;
 template <typename T>
 using custom_set = std::set<T, std::less<T>, CustomAllocator<T>>;
 
-template <typename T>
-using custom_unordered_set =
-std::unordered_set<T, std::hash<T>, std::equal_to<T>, CustomAllocator<T>>;
-
 template <typename K, typename V>
 using custom_map =
 std::map<K, V, std::less<K>, CustomAllocator<std::pair<const K, V>>>;
-
-template <typename K, typename V>
-using custom_unordered_map =
-std::unordered_map<K, std::hash<K>, std::equal_to<K>,
-CustomAllocator<std::pair<const K, V>>>;
 
 using custom_string =
 std::basic_string<char, std::char_traits<char>, CustomAllocator<char>>;
 
 int main(int argc, char **argv) {
-  Allocator<int> io;
+  {
+    Allocator<int> io;
 
-  Allocator<int> io3(io);
+    Allocator<int> io3(io);
 
-  custom_vector<int> vector2{io};
-  vector2.push_back(1);
+    custom_vector<int> vector2{io};
+    vector2.push_back(1);
 
-  Allocator<int> io2(io);
-  CustomAllocator<int> custom_int_allocator;
+    Allocator<int> io2(io);
+    CustomAllocator<int> custom_int_allocator;
 
-  CustomAllocator<float> custom_int_allocator2{custom_int_allocator};
-  custom_vector<int> vector{custom_int_allocator};
-  for (int i = 0u; i < 100; ++i) {
-    vector.push_back(i);
-    std::cout << vector.at(i) << " ";
+    CustomAllocator<float> custom_int_allocator2{custom_int_allocator};
+    custom_vector<int> vector{custom_int_allocator};
+    for (int i = 0u; i < 100; ++i) {
+      vector.push_back(i);
+      std::cout << vector.at(i) << " ";
+    }
+
+    vector.resize(16u);
+    for (int val : vector) {
+      std::cout << val << " ";
+    }
+
+    CustomAllocator<float> custom_float_allocator{custom_int_allocator};
+    custom_list<float> list{{10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f},
+                            custom_float_allocator};
+    for (float val : list) {
+      std::cout << val << " ";
+    }
+
+    CustomAllocator<std::pair<double, double>> custom_pair_allocator;
+    custom_map<double, double> map{{{1.0, 100.0}, {2.0, 200.0}},
+                                   custom_pair_allocator};
+    for (const auto &it : map) {
+      std::cout << "{" << it.first << " : " << it.second << "} ";
+    }
+
+    CustomAllocator<double> custom_double_allocator;
+    custom_set<double> set{{1000.0, 2000.0, 3000.0}, custom_double_allocator};
+    for (double val : set) {
+      std::cout << val << " ";
+    }
+    {
+      CustomAllocator<char> custom_char_allocator;
+      custom_string string1{"from 1 string\n", custom_char_allocator};
+      custom_string string2{"from 2 string\n", custom_char_allocator};
+      custom_string string3{"from 2 string\n", custom_char_allocator};
+      custom_string result_string = string1 + string2 + string3;
+      std::cout << result_string;
+    }
   }
-
-  vector.resize(16u);
-  for (int val : vector) {
-    std::cout << val << " ";
-  }
-
-  CustomAllocator<float> custom_float_allocator{custom_int_allocator};
-  custom_list<float> list{{10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f},
-                          custom_float_allocator};
-  for (float val : list) {
-    std::cout << val << " ";
-  }
-
-  CustomAllocator<std::pair<double, double>> custom_pair_allocator;
-  custom_map<double, double> map{{{1.0, 100.0}, {2.0, 200.0}},
-                                 custom_pair_allocator};
-  for (const auto &it : map) {
-    std::cout << "{" << it.first << " : " << it.second << "} ";
-  }
-
-  CustomAllocator<double> custom_double_allocator;
-  custom_set<double> set{{1000.0, 2000.0, 3000.0}, custom_double_allocator};
-  for (double val : set) {
-    std::cout << val << " ";
-  }
-
-  CustomAllocator<char> custom_char_allocator;
-  custom_string string1{"from 1 string\n", custom_char_allocator};
-  custom_string string2{"from 2 string\n", custom_char_allocator};
-  custom_string string3{"from 2 string\n", custom_char_allocator};
-  custom_string result_string = string1 + string2 + string3;
-  std::cout << result_string;
 
   return 0;
 }
