@@ -13,13 +13,12 @@ double normVector(const Point &pointA, const Point &pointB) {
   return sqrt(pow((pointB.y - pointA.y), 2) + pow((pointB.x - pointA.x), 2));
 }
 
-template <typename Base, typename T> inline bool instanceof (const T &ob) {
-  return typeid(Base) == typeid(ob) || is_base_of<Base, T>::value;
-}
 
 Point::Point(double x_, double y_) : x(x_), y(y_) {}
 
 Point::Point() : x(0.), y(0.) {}
+
+Point::~Point() {}
 
 bool Point::operator==(const Point &point) const {
   return abs(x - point.x) <= EPS && abs(y - point.y) <= EPS;
@@ -91,6 +90,8 @@ Line::Line(Point p1, double c1_) : point_a(p1), C(c1_) {
 
 Line::Line(double b_, double c_) : A(1), B(b_), C(c_) {}
 
+Line::~Line() {}
+
 bool Line::operator==(const Line &line) const {
   return abs(B / A - line.B / line.A) <= EPS &&
       abs(C / A - line.C / line.A) <= EPS;
@@ -98,7 +99,11 @@ bool Line::operator==(const Line &line) const {
 
 bool Line::operator!=(const Line &line) const { return !(*this == line); }
 
+Shape::~Shape() {}
+
 Polygon::Polygon(vector<Point> points_) : vertices(std::move(points_)) {}
+
+Polygon::~Polygon() {}
 
 double Polygon::perimeter() const {
   double perimeter = 0.;
@@ -229,10 +234,12 @@ bool Polygon::operator==(const Shape &another) {
 
 bool Polygon::operator!=(const Shape &another) { return !(*this == another); }
 
-size_t Polygon::verticesCount() const { return vertices.size(); }
+unsigned Polygon::verticesCount() const { return vertices.size(); }
 
 Triangle::Triangle(Point p1_, Point p2_, Point p3_)
     : Polygon({p1_, p2_, p3_}) {}
+
+Triangle::~Triangle() = default;
 
 Circle Triangle::inscribedCircle() const {
 
@@ -374,6 +381,7 @@ Rectangle::Rectangle(Point p1, Point p3, int k = 1) : Polygon({}) {
   vertices.push_back(p3);
   vertices.push_back(new_point_candidate_D);
 }
+Rectangle::~Rectangle() {}
 
 pair<Line, Line> Rectangle::diagonals() const {
 
@@ -406,6 +414,7 @@ Circle Square::inscribedCircle() const {
 
   return Circle(center, radius);
 }
+Square::~Square() {}
 
 Ellipse::Ellipse(Point f1_, Point f2_, double c_)
     : focus_a(f1_), focus_b(f2_), a(c_ / 2.) {}
@@ -415,6 +424,8 @@ double Ellipse::eccentricity() const {
   double e = c / a;
   return e;
 }
+
+Ellipse::~Ellipse() {}
 
 double Ellipse::perimeter() const {
   return 4 * a * std::comp_ellint_2(eccentricity());
@@ -478,3 +489,5 @@ Circle::Circle(Point p1, double r) : Ellipse(p1, p1, r * 2.) {}
 Point Circle::center() const { return focus_a; }
 
 double Circle::radius() const { return a; }
+
+Circle::~Circle() {}
