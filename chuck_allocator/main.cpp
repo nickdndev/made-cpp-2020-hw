@@ -28,6 +28,8 @@ public:
     free_blocks.insert(pointer_header);
   }
 
+  ~Chunk() = default;
+
   bool contains(const std::uint8_t *address) const noexcept {
     const auto *start_chunk =
         reinterpret_cast<const std::uint8_t *>(blocks.data());
@@ -102,9 +104,16 @@ public:
 };
 
 template <std::size_t CHUNK_SIZE> class AllocationMemory {
-  std::deque<Chunk<CHUNK_SIZE>> chunks;
+  std::list<Chunk<CHUNK_SIZE> *> chunks;
 
 public:
+  AllocationMemory() = default;
+
+  ~AllocationMemory() {
+    for (auto &chunk : chunks) {
+      delete chunk;
+    }
+  }
 
   void *allocate_object(std::size_t size) {
 
@@ -113,15 +122,16 @@ public:
     }
 
     for (auto &chunk : chunks) {
-      void *allocated_block = chunk.reserveBlock(size);
+      void *allocated_block = chunk->reserveBlock(size);
       if (allocated_block) {
         return allocated_block;
       }
     }
 
-    chunks.push_back(Chunk<CHUNK_SIZE>{});
-    auto &chunk = chunks.back();
-    std::uint8_t *allocated_block = chunk.reserveBlock(size);
+    auto chunk = new Chunk<CHUNK_SIZE>();
+
+    chunks.push_back(chunk);
+    std::uint8_t *allocated_block = chunk->reserveBlock(size);
     return allocated_block;
   }
 
@@ -132,8 +142,8 @@ public:
 
     auto *deallocation_ptr = static_cast<std::uint8_t *>(p);
     for (auto &chunk : chunks) {
-      if (chunk.contains(deallocation_ptr)) {
-        chunk.releaseBlock(deallocation_ptr);
+      if (chunk->contains(deallocation_ptr)) {
+        chunk->releaseBlock(deallocation_ptr);
       }
     }
   }
@@ -161,7 +171,9 @@ public:
     memory = new AllocationMemory<CHUNK_SIZE>();
     number_instances = new size_t(1);
 
-    std::cout << "Allocate memory " << (*number_instances) << std::endl;
+    std::cout << std::endl
+              << "---Crete allocator and allocate memory---"
+              << (*number_instances) << std::endl;
   };
 
   Allocator(const Allocator &other) noexcept {
@@ -172,13 +184,18 @@ public:
 
   ~Allocator() {
     if ((*number_instances) > 1) {
+
       (*number_instances)--;
-      std::cout
-          << "Call destructor for coped allocator. number instance remains : "
-          << (*number_instances) << std::endl;
+
+      std::cout << std::endl
+                << "---Call destructor for copped allocator---" << std::endl
+                << " Number remains instance : " << (*number_instances)
+                << std::endl;
     } else {
       delete memory;
-      std::cout << "Destroy allocator and release memory" << std::endl;
+
+      std::cout << std::endl
+                << "---Destroy allocator and release memory---" << std::endl;
     }
   }
 
@@ -202,84 +219,97 @@ public:
   }
 
   template <typename U> void destroy(U *ptr) { ptr->~U(); }
+
+  Allocator &operator=(const Allocator &a) {
+    if (this == &a)
+      return *this;
+
+    if ((*number_instances) > 1) {
+      delete memory;
+    } else {
+      (*number_instances)--;
+    }
+
+    memory = a.memory;
+    number_instances = a.number_instances;
+    (*number_instances)++;
+
+    return *this;
+  }
 };
 
-template <typename T, typename U>
-bool operator==(const Allocator<T> &lhs, const Allocator<U> &rhs) {
-  return lhs.alloc_core == rhs.alloc_core;
-}
-
-template <typename T, typename U>
-bool operator!=(const Allocator<T> &lhs, const Allocator<U> &rhs) {
-  return !(lhs == rhs);
-}
-
-template <typename T, std::size_t CHUNK_SIZE = 16'384u>
-using CustomAllocator = Allocator<T>;
-
-template <typename T> using custom_vector = std::vector<T, CustomAllocator<T>>;
-
-template <typename T> using custom_list = std::list<T, CustomAllocator<T>>;
-
-template <typename T>
-using custom_set = std::set<T, std::less<T>, CustomAllocator<T>>;
-
-template <typename K, typename V>
-using custom_map =
-std::map<K, V, std::less<K>, CustomAllocator<std::pair<const K, V>>>;
-
-using custom_string =
-std::basic_string<char, std::char_traits<char>, CustomAllocator<char>>;
-
 int main(int argc, char **argv) {
+
   {
-    Allocator<int> io;
+    /* Test copy allocator*/
+    Allocator<int> custom_int_allocator;
 
-    Allocator<int> io3(io);
+    Allocator<float> custom_float_allocator{custom_int_allocator};
 
-    custom_vector<int> vector2{io};
-    vector2.push_back(1);
+    std::vector<int, Allocator<int>> vector{custom_int_allocator};
 
-    Allocator<int> io2(io);
-    CustomAllocator<int> custom_int_allocator;
-
-    CustomAllocator<float> custom_int_allocator2{custom_int_allocator};
-    custom_vector<int> vector{custom_int_allocator};
-    for (int i = 0u; i < 100; ++i) {
+    /* Test allocator for vector stl container*/
+    for (int i = 0; i < 50; ++i) {
       vector.push_back(i);
       std::cout << vector.at(i) << " ";
     }
 
-    vector.resize(16u);
+    std::cout << std::endl;
+
+    vector.resize(16);
     for (int val : vector) {
       std::cout << val << " ";
     }
 
-    CustomAllocator<float> custom_float_allocator{custom_int_allocator};
-    custom_list<float> list{{10.0f, 11.0f, 12.0f, 13.0f, 14.0f, 15.0f},
-                            custom_float_allocator};
+    /* Test allocator for list<float> stl container*/
+
+    std::list<float, Allocator<float>> list{
+        {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f}, custom_float_allocator};
     for (float val : list) {
       std::cout << val << " ";
     }
 
-    CustomAllocator<std::pair<double, double>> custom_pair_allocator;
-    custom_map<double, double> map{{{1.0, 100.0}, {2.0, 200.0}},
-                                   custom_pair_allocator};
+    std::cout << std::endl;
+
+    /* Test allocator for map<pair> stl container*/
+    Allocator<std::pair<double, double>> allocator_for_pair;
+
+    std::map<double, double, std::less<>,
+        Allocator<std::pair<const double, double>>>
+        map{{{1.0, 100.0}, {2.0, 200.0}}, allocator_for_pair};
+
     for (const auto &it : map) {
       std::cout << "{" << it.first << " : " << it.second << "} ";
     }
 
-    CustomAllocator<double> custom_double_allocator;
-    custom_set<double> set{{1000.0, 2000.0, 3000.0}, custom_double_allocator};
+    /* Test allocator for set<double> stl container*/
+
+    Allocator<double> allocator_for_double;
+
+    std::set<double, std::less<>, Allocator<double>> set{
+        {1000.0, 2000.0, 3000.0}, allocator_for_double};
+
     for (double val : set) {
       std::cout << val << " ";
     }
+
     {
-      CustomAllocator<char> custom_char_allocator;
-      custom_string string1{"from 1 string\n", custom_char_allocator};
-      custom_string string2{"from 2 string\n", custom_char_allocator};
-      custom_string string3{"from 2 string\n", custom_char_allocator};
-      custom_string result_string = string1 + string2 + string3;
+
+      /* Test allocator for string stl container*/
+
+      Allocator<std::string> allocator_for_string;
+      std::basic_string<char, std::char_traits<char>, Allocator<char>> string1{
+          "from 1 string\n", allocator_for_string};
+
+      std::basic_string<char, std::char_traits<char>, Allocator<char>> string2{
+          "from 2 string\n", allocator_for_string};
+
+      std::basic_string<char, std::char_traits<char>, Allocator<char>> string3{
+          "from 2 string\n", allocator_for_string};
+
+      std::basic_string<char, std::char_traits<char>, Allocator<char>>
+          result_string = string1 + string2 + string3;
+
       std::cout << result_string;
     }
   }
