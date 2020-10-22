@@ -189,7 +189,7 @@ public:
 
       std::cout << std::endl
                 << "---Call destructor for copped allocator---" << std::endl
-                << " Number remains instance : " << (*number_instances)
+                << " Number remains instances : " << (*number_instances)
                 << std::endl;
     } else {
       delete memory;
