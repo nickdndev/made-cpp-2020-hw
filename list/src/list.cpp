@@ -23,10 +23,21 @@ list<T, Alloc>::list(size_t count, const Alloc &alloc) {
   for (size_t i = 0; i < count; i++)
     push_back(T());
 }
+
+template <class T, class Alloc>
+list<T, Alloc>::list(size_t count, const T &value, const Alloc &alloc) {
+  init();
+  for (size_t i = 0; i < count; i++)
+    push_back(value);
+}
 template <class T, class Alloc> list<T, Alloc>::~list() {}
 
 template <class T, class Alloc> void list<T, Alloc>::push_back(T &&value) {
   insert(cend(), std::move(value));
+}
+
+template <class T, class Alloc> void list<T, Alloc>::push_back(const T &value) {
+  insert(cend(), value);
 }
 
 template <class T, class Alloc>
@@ -37,7 +48,7 @@ typename list<T, Alloc>::iterator list<T, Alloc>::insert(const_iterator pos,
   count++;
 
   Node *node = allocator.allocate(1);
-  allocator.construct(node, p->prev, p);
+  allocator.construct(node, value, p->prev, p);
 
   p->prev->next = node;
   p->prev = node;
@@ -54,11 +65,43 @@ list<T, Alloc>::insert(list::const_iterator pos, T &&value) {
   Node *node = allocator.allocate(1);
   allocator.construct(node, value, p->prev, p);
 
-  auto iiiooo = p->prev;
-  auto op = iiiooo->next;
+  /*auto iiiooo = p->prev;
+  auto op = iiiooo->next;*/
   p->prev->next = node;
   p->prev = node;
   return iterator(node);
+}
+
+template <class T, class Alloc>
+typename list<T, Alloc>::iterator
+list<T, Alloc>::insert(list::const_iterator pos, size_t req_count,
+                       const T &value) {
+
+  auto *p = pos.current;
+
+  count += req_count;
+
+  //Node *nodes = allocator.allocate(req_count);
+
+  for (size_t i = 0; i < req_count; i++) {
+    Node *nodes = allocator.allocate(1);
+    //allocator.construct(nodes + i, value, p->prev, p);
+    allocator.construct(nodes, value, p->prev, p);
+
+    //auto *poiy = nodes + i;
+    //allocator.deallocate(poiy,1);
+    /*  p->prev->next = nodes + i;
+      p->prev = nodes + i;
+      p = nodes + i; */
+    p->prev->next = nodes;
+    p->prev = nodes;
+    p = nodes ;
+  }
+
+  // allocator.deallocate(nodes+1,1);
+
+//  return iterator(nodes + req_count - 1);
+  return iterator(p);
 }
 
 template <class T, class Alloc>
@@ -109,10 +152,22 @@ list<T, Alloc>::erase(list::const_iterator pos) {
   p->next->prev = p->prev;
   // delete p;
 
+  // delete  p;
   allocator.deallocate(p, 1);
   count--;
   return iterator(p->next);
 }
+
+template <class T, class Alloc>
+typename list<T, Alloc>::iterator
+list<T, Alloc>::erase(list::const_iterator first, list::const_iterator last) {
+
+  for (auto itr = first; itr != last;)
+    itr = erase(itr);
+
+  return iterator(last.current);
+}
+
 template <class T, class Alloc> bool list<T, Alloc>::empty() const {
   return size() == 0;
 }
@@ -144,13 +199,43 @@ template <class T, class Alloc> void list<T, Alloc>::resize(size_t count) {
   }
 }
 template <class T, class Alloc> const T &list<T, Alloc>::back() const {
-  return *(--cend());;
+  return *(--cend());
+  ;
+}
+template <class T, class Alloc> void list<T, Alloc>::swap(list &other) {
+  Node *l_first_temp, *l_last_temp;
+  l_first_temp = first;
+  l_last_temp = last;
+  first = other.first;
+  last = other.last;
+  other.first = l_first_temp;
+  other.last = l_last_temp;
+}
+template <class T, class Alloc> void list<T, Alloc>::sort() {
+  if (size() < 1)
+    return;
+  else {
+    auto current = first;
+    while (current->next != nullptr) {
+      auto index = current->next;
+      while (index != nullptr) {
+        if (current->data > index->data) {
+          auto temp = current->data;
+          current->data = index->data;
+          index->data = temp;
+        }
+        index = index->next;
+      }
+      current = current->next;
+    }
+  }
 }
 
 template <class T, class Alloc> list<T, Alloc>::iterator::iterator() {}
 
 template <class T, class Alloc>
-list<T, Alloc>::iterator::iterator(const list<T, Alloc>::iterator &) {}
+list<T, Alloc>::iterator::iterator(const list<T, Alloc>::iterator &) = default;
+
 template <class T, class Alloc>
 list<T, Alloc>::iterator::iterator(list::Node *p) : current{p} {}
 
@@ -163,6 +248,31 @@ template <class T, class Alloc>
 typename list<T, Alloc>::iterator &list<T, Alloc>::iterator::operator--() {
   current = current->prev;
   return *this;
+}
+
+template <class T, class Alloc>
+typename list<T, Alloc>::iterator &list<T, Alloc>::iterator::operator++() {
+  this->current = this->current->next;
+  return *this;
+}
+
+template <class T, class Alloc>
+typename list<T, Alloc>::iterator &
+list<T, Alloc>::iterator::operator=(const list::iterator &it) {
+  if (this == &it)
+    return *this;
+  current = it.current;
+
+  return *this;
+}
+template <class T, class Alloc>
+bool list<T, Alloc>::iterator::operator==(list::iterator other) const {
+  // return current->data == other.current->data;
+  return current == other.current;
+}
+template <class T, class Alloc>
+bool list<T, Alloc>::iterator::operator!=(list::iterator other) const {
+  return !(*this == other);
 }
 
 template <class T, class Alloc>
@@ -184,7 +294,53 @@ list<T, Alloc>::const_iterator::operator--() {
 }
 
 template <class T, class Alloc>
-typename list<T, Alloc>::const_iterator::reference list<T, Alloc>::const_iterator::operator*() const {
+typename list<T, Alloc>::const_iterator::reference
+list<T, Alloc>::const_iterator::operator*() const {
   return current->data;
 }
+template <class T, class Alloc>
+typename list<T, Alloc>::const_iterator
+list<T, Alloc>::const_iterator::operator++(int) {
+  return list::const_iterator();
+}
+template <class T, class Alloc>
+typename list<T, Alloc>::const_iterator &
+list<T, Alloc>::const_iterator::operator++() {
+  this->current = this->current->next;
+  return *this;
+}
+template <class T, class Alloc>
+typename list<T, Alloc>::const_iterator::pointer
+list<T, Alloc>::const_iterator::operator->() const {
+  return &(current->data);
+}
+template <class T, class Alloc>
+list<T, Alloc>::const_iterator::const_iterator(const list::iterator &other) {
+
+  current = other.current;
+}
+template <class T, class Alloc>
+bool list<T, Alloc>::const_iterator::operator==(
+    list::const_iterator other) const {
+  return current == other.current;
+}
+template <class T, class Alloc>
+bool list<T, Alloc>::const_iterator::operator!=(
+    list::const_iterator other) const {
+  // return !(*this == other);
+  return current != other.current;
+}
+template <class T, class Alloc>
+typename list<T, Alloc>::const_iterator &
+list<T, Alloc>::const_iterator::operator=(const list::const_iterator &itr) {
+  if (this == &itr)
+    return *this;
+  current = itr.current;
+
+  return *this;
+}
+/*template <class T, class Alloc>
+list<T, Alloc>::const_iterator::const_iterator(const list::iterator &) =
+    default;*/
 } // namespace task
+// namespace task

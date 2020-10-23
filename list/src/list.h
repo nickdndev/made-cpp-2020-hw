@@ -10,9 +10,20 @@ template <class T, class Alloc = std::allocator<T>> class list {
     Node *next;
 
     Node(const T &d = T{}, Node *p = nullptr, Node *n = nullptr)
-        : data{d}, prev{p}, next{n} {}
+        : data(d), prev(p), next(n) {}
+
+    /* Node(const T &d = T{}, Node *p = nullptr, Node *n = nullptr)
+     */
+    /*: data(d)*/ /* */ /*, prev(p), next(n)*/ /* {
+       prev = p;
+       next = n;
+       data = d;
+     }*/
     Node(T &&d, Node *p = nullptr, Node *n = nullptr)
-        : data{std::move(d)}, prev{p}, next{n} {}
+        : data(std::move(d)), prev(p), next(n) {}
+
+    /*Node(const T &&d, Node *p = nullptr, Node *n = nullptr)
+        : data(std::move(d)), prev(p), next(n) {}*/
   };
 
   using allocator_type_internal =
@@ -70,6 +81,8 @@ public:
 
     const_iterator();
     const_iterator(const const_iterator &);
+    // explicit const_iterator(const iterator &);
+    const_iterator(const iterator &);
     const_iterator &operator=(const const_iterator &);
 
     const_iterator &operator++();
