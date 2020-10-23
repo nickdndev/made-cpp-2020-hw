@@ -166,6 +166,7 @@ public:
   // Your code goes here?..
 
 private:
+  void init();
   // Your code goes here...
 };
 
