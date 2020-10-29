@@ -209,9 +209,7 @@ public:
     return static_cast<T *>(memory->allocate_object(n * sizeof(T)));
   }
 
-  void deallocate(T *p, std::size_t n) {
-    memory->deallocate_object(p, n * sizeof(T));
-  }
+  void deallocate(T *p, std::size_t n) {}
 
   template <typename U, typename... Args>
   void construct(U *ptr, Args &&... args) {
