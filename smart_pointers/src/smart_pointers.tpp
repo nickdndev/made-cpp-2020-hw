@@ -6,56 +6,56 @@ template <typename T, typename D>
 constexpr UniquePtr<T, D>::UniquePtr() noexcept = default;
 
 template <typename T, typename D>
-UniquePtr<T, D>::UniquePtr(UniquePtr::pointer p) noexcept : _impl{p} {}
+UniquePtr<T, D>::UniquePtr(UniquePtr::pointer p) noexcept : _pointer{p} {}
 
 template <typename T, typename D>
 UniquePtr<T, D>::UniquePtr(UniquePtr &&up) noexcept
-    : _impl{up.release(), std::forward<deleter_type>(up.get_deleter())} {}
+    : _pointer{up.release(), std::forward<deleter_type>(up.get_deleter())} {}
 
 template <typename T, typename D> UniquePtr<T, D>::~UniquePtr() noexcept {
-  auto _ptr = _impl._impl_ptr();
-  auto &_deleter = _impl._impl_deleter();
+  auto _ptr = _pointer.get_ptr();
+  auto &_deleter = _pointer.get_deleter();
   if (_ptr)
     _deleter(_ptr);
 }
 template <typename T, typename D>
 UniquePtr<T, D> &UniquePtr<T, D>::operator=(UniquePtr &&up) noexcept {
   reset(up.release());
-  auto &_deleter = _impl._impl_deleter();
+  auto &_deleter = _pointer.get_deleter();
   _deleter = up.get_deleter();
   return *this;
 }
 template <typename T, typename D>
 typename UniquePtr<T, D>::element_type &UniquePtr<T, D>::operator*() const
-    noexcept {
-  auto _ptr = _impl._impl_ptr();
+noexcept {
+  auto _ptr = _pointer.get_ptr();
   return *_ptr;
 }
 template <typename T, typename D>
 typename UniquePtr<T, D>::pointer UniquePtr<T, D>::operator->() const noexcept {
-  auto _ptr = _impl._impl_ptr();
+  auto _ptr = _pointer.get_ptr();
   return _ptr;
 }
 template <typename T, typename D>
 typename UniquePtr<T, D>::pointer UniquePtr<T, D>::get() const noexcept {
-  return _impl._impl_ptr();
+  return _pointer.get_ptr();
 }
 template <typename T, typename D>
 typename UniquePtr<T, D>::deleter_type &
 UniquePtr<T, D>::get_deleter() noexcept {
-  return _impl._impl_deleter();
+  return _pointer.get_deleter();
 }
 template <typename T, typename D>
 typename UniquePtr<T, D>::pointer UniquePtr<T, D>::release() noexcept {
-  auto &_ptr = _impl._impl_ptr();
+  auto &_ptr = _pointer.get_ptr();
   pointer cp = _ptr;
   _ptr = nullptr;
   return cp;
 }
 template <typename T, typename D>
 void UniquePtr<T, D>::reset(UniquePtr::pointer p) noexcept {
-  auto &_ptr = _impl._impl_ptr();
-  auto &_deleter = _impl._impl_deleter();
+  auto &_ptr = _pointer.get_ptr();
+  auto &_deleter = _pointer.get_deleter();
   if (_ptr)
     _deleter(_ptr);
   _ptr = p;
@@ -63,7 +63,7 @@ void UniquePtr<T, D>::reset(UniquePtr::pointer p) noexcept {
 template <typename T, typename D>
 void UniquePtr<T, D>::swap(UniquePtr &up) noexcept {
   using std::swap;
-  swap(_impl, up._impl);
+  swap(_pointer, up._pointer);
 }
 
 template <class T>

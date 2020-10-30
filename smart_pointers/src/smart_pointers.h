@@ -1,9 +1,35 @@
 #pragma once
-
-#include "src/ptr.cpp"
-#include <atomic>
+#include <tuple>
 namespace task {
 
+template <typename T> class SharedPtr;
+template <typename T> class WeakPtr;
+
+template <typename T, typename D> class Ptr {
+public:
+  using pointer = T *;
+  using deleter_type = D;
+
+  constexpr Ptr() noexcept = default;
+
+  Ptr(pointer p) : _pointer{} { get_ptr() = p; }
+
+  template <typename Del>
+  Ptr(pointer p, Del &&d) : _pointer{p, std::forward<Del>(d)} {}
+
+  ~Ptr() noexcept = default;
+
+  pointer &get_ptr() { return std::get<0>(_pointer); }
+
+  pointer get_ptr() const { return std::get<0>(_pointer); }
+
+  deleter_type &get_deleter() { return std::get<1>(_pointer); }
+
+  const deleter_type &get_deleter() const { return std::get<1>(_pointer); }
+
+private:
+  std::tuple<pointer, deleter_type> _pointer;
+};
 
 template <typename T> class DefaultDelete {
 public:
@@ -14,15 +40,14 @@ public:
   void operator()(T *p) const { delete p; }
 };
 
-
 template <typename T, typename D = DefaultDelete<T>> class ControlBlock {
 public:
   using element_type = T;
   using deleter_type = D;
 
-  ControlBlock(T *p) : _impl{p} {}
+  ControlBlock(T *p) : _pointer{p} {}
 
-  ControlBlock(T *p, D d) : _impl{p, d} {}
+  ControlBlock(T *p, D d) : _pointer{p, d} {}
 
   ~ControlBlock() {}
 
@@ -31,8 +56,8 @@ public:
   void inc_wref() noexcept { ++_weak_use_count; }
 
   void dec_ref() noexcept {
-    auto _ptr = _impl._impl_ptr();
-    auto &_deleter = _impl._impl_deleter();
+    auto _ptr = _pointer.get_ptr();
+    auto &_deleter = _pointer.get_deleter();
     if (--_use_count == 0) {
       if (_ptr)
         _deleter(_ptr);
@@ -57,13 +82,13 @@ public:
   bool expired() const noexcept { return _use_count == 0; }
 
   void *get_deleter() noexcept {
-    return reinterpret_cast<void *>(std::addressof(_impl._impl_deleter()));
+    return reinterpret_cast<void *>(std::addressof(_pointer.get_deleter()));
   }
 
 private:
-  std::atomic<long> _use_count{1};
-  std::atomic<long> _weak_use_count{1};
-  Ptr<T, D> _impl;
+  long _use_count = 1;
+  long _weak_use_count = 1;
+  Ptr<T, D> _pointer;
 };
 template <typename T, typename D = DefaultDelete<T>> class UniquePtr {
 public:
@@ -84,24 +109,22 @@ public:
   element_type &operator*() const noexcept;
 
   pointer operator->() const noexcept;
+
   pointer get() const noexcept;
 
   deleter_type &get_deleter() noexcept;
 
   pointer release() noexcept;
+
   void reset(pointer p) noexcept;
 
   void swap(UniquePtr &up) noexcept;
 
 private:
-  Ptr<T, D> _impl;
+  Ptr<T, D> _pointer;
 };
-template <typename T> class SharedPtr;
-template <typename T> class WeakPtr;
 
-template <typename T, bool = std::is_array<T>::value,
-    bool = std::is_void<T>::value>
-class shared_ptr_access {
+template <typename T> class SharedPtrAccess {
 public:
   using element_type = T;
 
@@ -127,7 +150,7 @@ public:
 
   template <typename U> friend class WeakPtr;
 
-  using element_type = typename shared_ptr_access<T>::element_type;
+  using element_type = typename SharedPtrAccess<T>::element_type;
   using weak_type = WeakPtr<T>;
 
   constexpr SharedPtr() noexcept;
@@ -141,6 +164,7 @@ public:
   template <typename U> explicit SharedPtr(const WeakPtr<U> &wp);
 
   ~SharedPtr();
+
   SharedPtr &operator=(const SharedPtr &);
 
   SharedPtr &operator=(SharedPtr &&);
@@ -176,13 +200,11 @@ public:
 
   constexpr WeakPtr() noexcept;
 
-  template <class U>
-  WeakPtr(SharedPtr<U> const &sp) noexcept;
+  template <class U> WeakPtr(SharedPtr<U> const &sp) noexcept;
 
   WeakPtr(WeakPtr const &wp) noexcept;
 
-  template <class U>
-  WeakPtr(WeakPtr<U> const &wp) noexcept;
+  template <class U> WeakPtr(WeakPtr<U> const &wp) noexcept;
 
   template <typename U> WeakPtr(WeakPtr<U> &&sp) noexcept;
 
@@ -190,11 +212,9 @@ public:
 
   WeakPtr &operator=(const WeakPtr &wp) noexcept;
 
-  template <typename U>
-  WeakPtr &operator=(const WeakPtr<U> &wp) noexcept;
+  template <typename U> WeakPtr &operator=(const WeakPtr<U> &wp) noexcept;
 
-  template <typename U>
-  WeakPtr &operator=(const SharedPtr<U> &sp) noexcept;
+  template <typename U> WeakPtr &operator=(const SharedPtr<U> &sp) noexcept;
 
   void swap(WeakPtr &wp) noexcept;
 
