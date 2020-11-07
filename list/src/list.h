@@ -1,38 +1,32 @@
 #pragma once
 #include <iterator>
+#include <list>
+
+#include <algorithm>
+#include <vector>
 
 namespace task {
-
 template <class T, class Alloc = std::allocator<T>> class list {
+
+private:
   struct Node {
-    T data;
-    Node *prev;
-    Node *next;
+  public:
+    T _value;
+    Node *_next;
+    Node *_prev;
 
-    Node(const T &d = T{}, Node *p = nullptr, Node *n = nullptr)
-        : data(d), prev(p), next(n) {}
-
-    /* Node(const T &d = T{}, Node *p = nullptr, Node *n = nullptr)
-     */
-    /*: data(d)*/ /* */ /*, prev(p), next(n)*/ /* {
-       prev = p;
-       next = n;
-       data = d;
-     }*/
-    Node(T &&d, Node *p = nullptr, Node *n = nullptr)
-        : data(std::move(d)), prev(p), next(n) {}
-
-    /*Node(const T &&d, Node *p = nullptr, Node *n = nullptr)
-        : data(std::move(d)), prev(p), next(n) {}*/
+    Node(Node *n, Node *p) : _value(T()), _next(n), _prev(p){};
+    Node(const T &d, Node *n, Node *p) : _value(d), _next(n), _prev(p){};
+    Node(T &&d, Node *n, Node *p) : _value(std::move(d)), _next(n), _prev(p){};
   };
 
   using allocator_type_internal =
-  typename std::allocator_traits<Alloc>::template rebind_alloc<Node>;
-  allocator_type_internal allocator;
+      typename std::allocator_traits<Alloc>::template rebind_alloc<Node>;
+  allocator_type_internal _allocator;
 
-  int count;
-  Node *first;
-  Node *last;
+  Node *_head;
+  Node *_back;
+  size_t _size;
 
 public:
   class iterator {
@@ -57,31 +51,24 @@ public:
     bool operator==(iterator other) const;
     bool operator!=(iterator other) const;
 
-    // Your code goes here?..
-
   protected:
-    Node *current; // pointer to node in List
-    T &retrieve() const;
-
-    explicit iterator(Node *p); // protected constructor
-
-    friend class list<T>;
+    iterator(Node *p);
+    friend class list;
 
   private:
-    // Your code hoes here...
+    Node *_current;
   };
 
   class const_iterator {
   public:
     using difference_type = ptrdiff_t;
     using value_type = T;
-    using pointer = T *;
-    using reference = T &;
+    using pointer = const T *;
+    using reference = const T &;
     using iterator_category = std::bidirectional_iterator_tag;
 
     const_iterator();
     const_iterator(const const_iterator &);
-    // explicit const_iterator(const iterator &);
     const_iterator(const iterator &);
     const_iterator &operator=(const const_iterator &);
 
@@ -96,12 +83,10 @@ public:
     bool operator!=(const_iterator other) const;
 
   protected:
-    Node *current; // pointer to node in List
-    T &retrieve() const;
+    friend class list;
 
-    explicit const_iterator(Node *p); // protected constructor
-
-    friend class list<T>;
+  private:
+    const Node *_current;
   };
 
   using reverse_iterator = std::reverse_iterator<iterator>;
@@ -175,16 +160,9 @@ public:
   void reverse();
   void unique();
   void sort();
-
-  // Your code goes here?..
-
-private:
-  void init();
-  // Your code goes here...
 };
 
 // Your template function definitions may go here...
-//#include "list.cpp"
 } // namespace task
 
 #include "list.cpp"
