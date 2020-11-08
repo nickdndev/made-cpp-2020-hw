@@ -35,13 +35,13 @@ typename list<T, Alloc>::iterator list<T, Alloc>::iterator::operator++(int) {
 
 template <class T, class Alloc>
 typename list<T, Alloc>::iterator::reference
-list<T, Alloc>::iterator::operator*() const {
+    list<T, Alloc>::iterator::operator*() const {
   return _current->_value;
 }
 
 template <class T, class Alloc>
 typename list<T, Alloc>::iterator::pointer
-list<T, Alloc>::iterator::operator->() const {
+    list<T, Alloc>::iterator::operator->() const {
   return &(_current->_value);
 }
 
@@ -108,13 +108,13 @@ list<T, Alloc>::const_iterator::operator++(int) {
 
 template <class T, class Alloc>
 typename list<T, Alloc>::const_iterator::reference
-list<T, Alloc>::const_iterator::operator*() const {
+    list<T, Alloc>::const_iterator::operator*() const {
   return _current->_value;
 }
 
 template <class T, class Alloc>
 typename list<T, Alloc>::const_iterator::pointer
-list<T, Alloc>::const_iterator::operator->() const {
+    list<T, Alloc>::const_iterator::operator->() const {
   return &(_current->_value);
 }
 
@@ -309,41 +309,6 @@ template <class T, class Alloc> size_t list<T, Alloc>::max_size() const {
 template <class T, class Alloc> void list<T, Alloc>::clear() {
   while (!empty())
     pop_front();
-
-}
-
-template <class T, class Alloc>
-typename list<T, Alloc>::iterator list<T, Alloc>::insert(const_iterator pos,
-                                                         const T &value) {
-  Node *prev = pos._current->_prev;
-  Node *node = _allocator.allocate(1);
-  _allocator.construct(node, value, prev->_next, prev);
-  prev->_next->_prev = node;
-  prev->_next = node;
-
-  iterator it;
-  it._current = node;
-
-  _size++;
-  return it;
-}
-
-template <class T, class Alloc>
-typename list<T, Alloc>::iterator list<T, Alloc>::insert(const_iterator pos,
-                                                         T &&value) {
-  _size++;
-  Node *prev = pos._current->_prev;
-  Node *node = _allocator.allocate(1);
-
-  _allocator.construct(node, std::move(value), prev->_next, prev);
-
-  prev->_next->_prev = node;
-  prev->_next = node;
-
-  iterator iter;
-  iter._current = node;
-
-  return iter;
 }
 
 template <class T, class Alloc>
@@ -404,6 +369,24 @@ template <class T, class Alloc> void list<T, Alloc>::pop_front() {
 }
 
 template <class T, class Alloc>
+typename list<T, Alloc>::iterator list<T, Alloc>::insert(const_iterator pos,
+                                                         T &&value) {
+  _size++;
+  Node *prev = pos._current->_prev;
+  Node *node = _allocator.allocate(1);
+
+  _allocator.construct(node, std::move(value), prev->_next, prev);
+
+  prev->_next->_prev = node;
+  prev->_next = node;
+
+  iterator iter;
+  iter._current = node;
+
+  return iter;
+}
+
+template <class T, class Alloc>
 template <class... Args>
 typename list<T, Alloc>::iterator
 list<T, Alloc>::emplace(typename list<T, Alloc>::const_iterator pos,
@@ -438,6 +421,22 @@ template <class T, class Alloc>
 template <class... Args>
 void list<T, Alloc>::emplace_front(Args &&... args) {
   emplace(begin(), std::forward<Args>(args)...);
+}
+
+template <class T, class Alloc>
+typename list<T, Alloc>::iterator list<T, Alloc>::insert(const_iterator pos,
+                                                         const T &value) {
+  Node *prev = pos._current->_prev;
+  Node *node = _allocator.allocate(1);
+  _allocator.construct(node, value, prev->_next, prev);
+  prev->_next->_prev = node;
+  prev->_next = node;
+
+  iterator it;
+  it._current = node;
+
+  _size++;
+  return it;
 }
 
 template <class T, class Alloc> void list<T, Alloc>::resize(size_t count) {
