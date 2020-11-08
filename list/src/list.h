@@ -159,6 +159,9 @@ public:
   void reverse();
   void unique();
   void sort();
+
+private:
+  void init();
 };
 
 // Your template function definitions may go here...

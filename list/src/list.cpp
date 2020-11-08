@@ -2,6 +2,17 @@
 
 namespace task {
 
+template <class T, class Alloc> void list<T, Alloc>::init() {
+  _size = 0;
+
+  _head = _allocator.allocate(1);
+  _back = _allocator.allocate(1);
+  _head->_next = _back;
+  _back->_prev = _head;
+  _back->_next = nullptr;
+  _head->_prev = nullptr;
+}
+
 template <class T, class Alloc> list<T, Alloc>::iterator::iterator() {
   _current = nullptr;
 }
@@ -143,14 +154,7 @@ bool list<T, Alloc>::const_iterator::operator!=(const_iterator other) const {
   return _current != other._current;
 }
 
-template <class T, class Alloc> list<T, Alloc>::list() : _size(0) {
-  _head = _allocator.allocate(1);
-  _back = _allocator.allocate(1);
-  _head->_prev = nullptr;
-  _head->_next = _back;
-  _back->_prev = _head;
-  _back->_next = nullptr;
-}
+template <class T, class Alloc> list<T, Alloc>::list() { init(); }
 
 template <class T, class Alloc>
 list<T, Alloc>::list(const Alloc &alloc) : list<T, Alloc>() {
@@ -324,13 +328,17 @@ list<T, Alloc>::insert(const_iterator pos, size_t count, const T &value) {
 
 template <class T, class Alloc>
 typename list<T, Alloc>::iterator list<T, Alloc>::erase(const_iterator pos) {
-  auto *p = pos._current;
-  p->_prev->_next = p->_next;
-  p->_next->_prev = p->_prev;
-  _allocator.destroy(p);
-  _allocator.deallocate(const_cast<Node *>(p), 1);
+  auto *node = pos._current;
+
+  node->_prev->_next = node->_next;
+  node->_next->_prev = node->_prev;
+
+  _allocator.destroy(node);
+  _allocator.deallocate(const_cast<Node *>(node), 1);
+
   _size--;
-  return iterator(p->_next);
+
+  return {node->_next};
 }
 
 template <class T, class Alloc>
@@ -380,10 +388,7 @@ typename list<T, Alloc>::iterator list<T, Alloc>::insert(const_iterator pos,
   prev->_next->_prev = node;
   prev->_next = node;
 
-  iterator iter;
-  iter._current = node;
-
-  return iter;
+  return {node};
 }
 
 template <class T, class Alloc>
@@ -393,22 +398,22 @@ list<T, Alloc>::emplace(typename list<T, Alloc>::const_iterator pos,
                         Args &&... args) {
   Node *prev = pos._current->_prev;
 
-  Alloc data_allocator;
+  Alloc t_allocator;
+
   Node *node = _allocator.allocate(1);
-  T *data = data_allocator.allocate(1);
-  data_allocator.construct(data, std::forward<Args>(args)...);
+  T *data = t_allocator.allocate(1);
+
+  t_allocator.construct(data, std::forward<Args>(args)...);
   _allocator.construct(node, std::move(*data), prev->_next, prev);
-  data_allocator.destroy(data);
-  data_allocator.deallocate(data, 1);
+
+  t_allocator.destroy(data);
+  t_allocator.deallocate(data, 1);
 
   prev->_next->_prev = node;
   prev->_next = node;
 
-  iterator it;
-  it._current = pos._current->_prev;
-
   _size++;
-  return it;
+  return {pos._current->_prev};
 }
 
 template <class T, class Alloc>
@@ -428,15 +433,14 @@ typename list<T, Alloc>::iterator list<T, Alloc>::insert(const_iterator pos,
                                                          const T &value) {
   Node *prev = pos._current->_prev;
   Node *node = _allocator.allocate(1);
+
   _allocator.construct(node, value, prev->_next, prev);
+
   prev->_next->_prev = node;
   prev->_next = node;
 
-  iterator it;
-  it._current = node;
-
   _size++;
-  return it;
+  return {node};
 }
 
 template <class T, class Alloc> void list<T, Alloc>::resize(size_t count) {
