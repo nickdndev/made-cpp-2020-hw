@@ -10,7 +10,6 @@ template <class T, class Alloc = std::allocator<T>> class list {
 
 private:
   struct Node {
-  public:
     T _value;
     Node *_next;
     Node *_prev;
