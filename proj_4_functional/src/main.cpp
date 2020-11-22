@@ -77,7 +77,7 @@ int main() {
     function<int(int)> h = [](auto i) { return i + 1; };
 
     assert(9 == compose(f, g, f)(0));
-    assert(5 == (f * g * h)(0));
+    assert(5 == compose(f, g, h)(0));
   }
 
   {
