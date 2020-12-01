@@ -1,9 +1,34 @@
 
+template <typename F> class functor {
 
-template <class F, class G> auto compose(F f, G g) {
-  return [f, g](auto x) { return f(g(x)); };
+public:
+  F f;
+
+  functor(F f) : f(f) {}
+
+  template <typename I> decltype(auto) operator()(I value) {
+    return f(value);
+  }
+};
+
+template <typename F, typename G> class composite {
+public:
+  F f;
+  G g;
+
+  composite(F _f, G _g) : f(_f), g(_g) {}
+
+  template <typename INPUT> decltype(auto) operator()(INPUT input) {
+    return g(f(input));
+  }
+};
+
+template <typename F> decltype(auto) compose(F f) { return functor<F>(f); }
+
+template <typename F, typename G> decltype(auto) compose(F f, G g) {
+  return composite<F, G>{f, g};
 }
 
-template <class F, typename... Fs> auto compose(F f, Fs &&... fs) {
+template <typename F, typename... Fs> decltype(auto) compose(F f, Fs &&... fs) {
   return compose(f, compose(fs...));
 }
