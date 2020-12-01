@@ -18,8 +18,8 @@ public:
 
   composite(F _f, G _g) : f(_f), g(_g) {}
 
-  template <typename INPUT> decltype(auto) operator()(INPUT input) {
-    return g(f(input));
+  template <typename I> decltype(auto) operator()(I value) {
+    return g(f(value));
   }
 };
 
