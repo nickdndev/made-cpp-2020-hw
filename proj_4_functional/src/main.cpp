@@ -74,10 +74,10 @@ int main() {
 
     function<double(int)> f = [](auto i) { return i + 3; };
     function<int(double)> g = [](auto i) { return i * 2; };
-    function<int(int)> h = [](auto i) { return i + 1; };
+    function<double(int)> h = [](auto i) { return i + 1; };
 
     assert(9 == compose(f, g, f)(0));
-    assert(7 == compose(f, g, h)(0));
+    assert(5 == compose(f, g, h)(0));
   }
 
   {
